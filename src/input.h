@@ -198,5 +198,5 @@ const char *input_event_get_name(SDL_Event *event);
 void assign_player_default_mappings(int player);
 void assign_controller_to_player(int player, int controller);
 void unassign_controller_to_player(int player, int controller);
-void input_get_new_player_context_control_event(int player, int input_idx, Uint8 alt, Uint32 timeout);
+void input_player_input_get_new_mapping_event(int player, int input_idx, Uint8 alt, Uint32 timeout);
 #endif //INPUT_H

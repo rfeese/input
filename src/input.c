@@ -227,10 +227,12 @@ void input_context_add_raw_mapping_at(t_input_context *ic, const SDL_Event *e, U
 		return;
 	}
 
-	// if the mapping already exists, deactivate it
-	for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
-		if(ic->mapping[input_idx][a].active && mapping_matches_raw_event(&ic->mapping[input_idx][a], e)){
-			ic->mapping[input_idx][a].active = 0;
+	// if the mapping already exists in the context, deactivate it
+	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
+		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
+			if(ic->mapping[i][a].active && mapping_matches_raw_event(&ic->mapping[i][a], e)){
+				ic->mapping[i][a].active = 0;
+			}
 		}
 	}
 
@@ -1598,16 +1600,15 @@ const char *input_event_get_name(SDL_Event *event){
 }
 //---------------------------------------------------------------------------
 /**
- * get new input event mapping by waiting for a real input event
+ * get new input event mapping for player context by waiting for a real input event
  * waits for a valid user input event to map to a specified control.
  * timeout after timeout milliseconds -1 = never
  */
-void input_get_new_player_context_control_event(int player, int input_idx, Uint8 alt, Uint32 timeout){
-/*
-	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { &input_context_ui };
+void input_player_input_get_new_mapping_event(int player, int input_idx, Uint8 alt, Uint32 timeout){
+	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { };
-	SDL_Event re;
-	t_input_event ie;
+	SDL_Event re = {};
+	t_input_event ie = {};
 	int have_re = 0;
 	int have_ie = 0;
 
@@ -1617,13 +1618,19 @@ void input_get_new_player_context_control_event(int player, int input_idx, Uint8
 	while(input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers)){}
 
 	int got_valid_event = 0;
-	exit_signal = 0;
+	int exit_signal = 0;
 	while(!exit_signal){
 		while(!exit_signal && input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers)){
 
 			if(!have_re){
 				got_valid_event = 0;
 				exit_signal = 0;
+				continue;
+			}
+
+			// consume ESC events as exit signal
+			if(re.type == SDL_KEYDOWN && re.key.keysym.sym == SDLK_ESCAPE){
+				exit_signal = 1;
 				continue;
 			}
 
@@ -1681,12 +1688,11 @@ void input_get_new_player_context_control_event(int player, int input_idx, Uint8
 	exit_signal = 0;
 
 	if(got_valid_event){
-		input_context_add_raw_mapping_at(&input_context_player[player], &re, input_idx, alt);
+		input_context_add_raw_mapping_at(&input_context_player[player], &re, input_idx, alt, 0);
 	}
 
 	// reset controls
 	input_context_reset(&input_context_player[player]);
-*/
 }
 //---------------------------------------------------------------------------
 void input_event_print(struct s_input_event *ie){

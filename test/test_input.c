@@ -190,6 +190,8 @@ int SDL_PollEvent(SDL_Event * event){
 		testevents_index++;
 		return 1;
 	}
+	// reset test events index for next call
+	testevents_index = 0;
 	return 0;
 }
 
@@ -836,6 +838,7 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
 	// button pressed, no repeat yet
+	testevents_index = TESTEVENTS_MAX;
 	pc.input[0].data.button.state = 1;
 	getticks_value = INPUT_DEFAULT_REPEAT_DELAY - 1;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should not have more to poll.");
@@ -843,6 +846,7 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
 	// repeat delay threshold reached
+	testevents_index = TESTEVENTS_MAX;
 	getticks_value = INPUT_DEFAULT_REPEAT_DELAY;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
@@ -852,6 +856,7 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, pc.input[0].data.button.repeating, "Input should be repeating.");
 
 	// repeating, but repeat time threshold not reached
+	testevents_index = TESTEVENTS_MAX;
 	have_ie = 0;
 	getticks_value += (INPUT_DEFAULT_REPEAT_TIME - 1);
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should not have more to poll.");
@@ -859,6 +864,7 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
 	// repeat time reached
+	testevents_index = TESTEVENTS_MAX;
 	getticks_value += 1;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
@@ -867,6 +873,7 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, pc.input[0].data.button.repeating, "Input should still be repeating.");
 
 	// poll again, no events
+	testevents_index = TESTEVENTS_MAX;
 	have_ie = 0;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should not have more to poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
@@ -1054,6 +1061,34 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[0][0].active, "controller mapping should be removed.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[0][1].active, "controller mapping should be removed.");
 }
+ 
+test_input_player_input_get_new_mapping_event(){
+
+	int p0_up = 0;
+	int p0_down = 1;
+	input_context_player[0].input[p0_up].defined = 1;
+	input_context_player[0].input[p0_up].id = p0_up;
+	input_context_player[0].input[p0_up].type = IT_BUTTON;
+	input_context_player[0].mapping[p0_up][0].active = 1;
+	input_context_player[0].mapping[p0_up][0].event.type = SDL_KEYDOWN;
+	input_context_player[0].mapping[p0_up][0].event.key.keysym.sym = SDLK_UP;
+	input_context_player[0].input[p0_down].defined = 1;
+	input_context_player[0].input[p0_down].id = p0_down;
+	input_context_player[0].input[p0_down].type = IT_BUTTON;
+	input_context_player[0].mapping[p0_down][0].active = 1;
+	input_context_player[0].mapping[p0_down][0].event.type = SDL_KEYDOWN;
+	input_context_player[0].mapping[p0_down][0].event.key.keysym.sym = SDLK_DOWN;
+
+	// remap down to up
+	testevents_index = 0;
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_UP;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+
+	input_player_input_get_new_mapping_event(0, p0_down, -1, 10);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_UP, input_context_player[0].mapping[p0_down][0].event.key.keysym.sym, "p0_down mapping should have been updated.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[p0_up][0].active, "p0_up mapping should have been unset.");
+}
 
 /*
 void test_input_context_load_configuration(){
@@ -1219,6 +1254,7 @@ int main(){
 	RUN_TEST(test_input_poll);
 	RUN_TEST(test_input_responds_to_device_added);
 	RUN_TEST(test_input_responds_to_device_removed);
+	RUN_TEST(test_input_player_input_get_new_mapping_event);
 //	RUN_TEST(test_controller_add_remove);
 //	RUN_TEST(test_input_context_load_configuration);
 //	RUN_TEST(test_input_context_save_configuration);
