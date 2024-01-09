@@ -151,7 +151,7 @@ typedef struct { char key[32]; char value[32]; } t_input_config_item;
 #define INPUT_MAX_JOYSTICK_AXES	2
 extern Uint32 num_joysticks;
 extern SDL_Joystick *joystick[INPUT_MAX_JOYSTICKS]; // joysticks by device index
-extern SDL_JoystickID joystickid[INPUT_MAX_JOYSTICKS]; // mapping of device index to instance_id instance id is used in events
+extern SDL_JoystickID joystick_id[INPUT_MAX_JOYSTICKS]; // mapping of device index to instance_id instance id is used in events
 extern Sint16 joy_axis_center[INPUT_MAX_JOYSTICKS][INPUT_MAX_JOYSTICK_AXES]; // joytick axis centers, by instance
 extern Sint16 joy_axis_threshold; // TODO: make this adustable per stick
 
@@ -177,26 +177,25 @@ int input_context_add_controller_mapping(t_input_context *ic, Uint32 input_id, c
 void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have_ie);
 void input_context_reset(t_input_context *ic);
 void input_context_apply_input_event(t_input_context *ic, t_input_event *ie);
+
+void unassign_controller_to_player(int player, int controller_idx);
+void assign_controller_to_player(int player, int controller_idx);
+
 // input handler prototype
 typedef void (*input_handler)(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie);
 // check incoming events using the provided contexts and handlers
 // if any input event triggered for provided contexts, it will be in ie.
 // otherwise, any unhandled raw event will be in re.
 int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_input_context *ic[], input_handler ih[]);
+
 int input_load_gamecontrollerdb();
+#ifdef USE_CONFIGURATION
 int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_which);
-int input_context_apply_configuration(t_input_context *ic, const t_input_config_item config[], int num_configs);
-int input_context_export_configuration(t_input_context *ic, t_input_config_item *(config[]), int max_export_configs);
 int input_context_save_configuration(t_input_context *ic);
 int input_player_prefer_controller_load_configuration();
 int input_player_prefer_controller_save_configuration();
-void input_context_assign_default_player_controller_mappings(t_input_context *ic, Uint32 controller);
-void input_context_ui_init();
-void input_context_player_init();
+#endif
 int input_init();
 const char *input_event_get_name(SDL_Event *event);
-void assign_player_default_mappings(int player);
-void assign_controller_to_player(int player, int controller);
-void unassign_controller_to_player(int player, int controller);
 void input_player_input_get_new_mapping_event(int player, int input_idx, Uint8 alt, Uint32 timeout);
 #endif //INPUT_H

@@ -3,6 +3,9 @@
  */
 #include <stdlib.h>
 #include "input.h"
+#ifdef USE_CONFIGURATION
+#include <configuration.h>
+#endif
 #define ABS(val)    (((val) < 0) ? (0 - (val)) : (val))
 
 t_input global_inputs[INPUT_MAX_CONTEXT_INPUTS] = {};
@@ -10,7 +13,7 @@ t_raw_mapping global_mappings[INPUT_MAX_CONTEXT_INPUTS][INPUT_MAX_ALT_MAPPINGS] 
 
 Uint32 num_joysticks = 0;
 SDL_Joystick *joystick[INPUT_MAX_JOYSTICKS] = { };
-SDL_JoystickID joystickid[INPUT_MAX_JOYSTICKS] = { -1, -1, -1, -1, -1, -1, -1, -1 }; // remember the joystick instance_id for joysticks
+SDL_JoystickID joystick_id[INPUT_MAX_JOYSTICKS] = { -1, -1, -1, -1, -1, -1, -1, -1 }; // remember the joystick instance_id for joysticks
 Sint16 joy_axis_center[INPUT_MAX_JOYSTICKS][INPUT_MAX_JOYSTICK_AXES] = { { 0 } };
 // Sint16 joy_axis_threshold = 8192;
 Sint16 joy_axis_threshold = 16384;
@@ -702,7 +705,7 @@ void add_joystick(Uint16 joy_idx){
                 // printf("Joystick %d instance id: %d.\n", joy_idx, SDL_JoystickInstanceID(joystick[joy_idx]));
         // }
 
-        joystickid[joy_idx] = SDL_JoystickInstanceID(joystick[joy_idx]);
+        joystick_id[joy_idx] = SDL_JoystickInstanceID(joystick[joy_idx]);
 
 	num_joysticks ++;
 
@@ -718,7 +721,7 @@ void add_joystick(Uint16 joy_idx){
                 // joy_axis_center[joy_idx][axis_idx] = SDL_JoystickGetAxis(joystick[joy_idx], axis_idx);
 		// start with 0
 		// TODO: update based on observed values?
-                joy_axis_center[joystickid[joy_idx]][axis_idx] = 0;
+                joy_axis_center[joystick_id[joy_idx]][axis_idx] = 0;
         }
 
         //init joystick
@@ -733,7 +736,7 @@ void add_joystick(Uint16 joy_idx){
 //---------------------------------------------------------------------------
 void remove_joystick(Uint16 joy_id){
         int joy_idx;
-        for(joy_idx = 0; joy_idx < INPUT_MAX_JOYSTICKS && (joystickid[joy_idx] != joy_id); joy_idx++){
+        for(joy_idx = 0; joy_idx < INPUT_MAX_JOYSTICKS && (joystick_id[joy_idx] != joy_id); joy_idx++){
         }
 
         if(joy_idx >= INPUT_MAX_JOYSTICKS){
@@ -755,7 +758,7 @@ void remove_joystick(Uint16 joy_id){
         //unregister joystick
         SDL_JoystickClose(joystick[joy_idx]);
         joystick[joy_idx] = NULL;
-        joystickid[joy_idx] = -1;
+        joystick_id[joy_idx] = -1;
 	num_joysticks -= 1;
 
         // if(main_settings.debug){
@@ -763,10 +766,7 @@ void remove_joystick(Uint16 joy_id){
         // }
 }
 //---------------------------------------------------------------------------
-void assign_player_default_mappings(int player){
-}
-//---------------------------------------------------------------------------
-void input_context_apply_controller_mappings_for_controller(t_input_context *ic, SDL_JoystickID joystickid){
+void input_context_apply_controller_mappings_for_controller(t_input_context *ic, SDL_JoystickID joystick_id){
 	SDL_Event e = {};
 	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
 		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
@@ -775,14 +775,14 @@ void input_context_apply_controller_mappings_for_controller(t_input_context *ic,
 					break;
 				case INPUT_CONTROLLER_MAPPINGTYPE_BUTTON:
 					e.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
-					e.cbutton.which = joystickid;
+					e.cbutton.which = joystick_id;
 					e.cbutton.button = ic->controller_mapping[i][a].data.button;
 					e.cbutton.state = SDL_PRESSED;
 					input_context_add_raw_mapping_at(ic, &e, i, -1, 0);
 					break;
 				case INPUT_CONTROLLER_MAPPINGTYPE_AXIS:
 					e.caxis.type = SDL_CONTROLLERAXISMOTION;
-					e.caxis.which = joystickid;
+					e.caxis.which = joystick_id;
 					e.caxis.axis = ic->controller_mapping[i][a].data.axis.axis;
 					e.caxis.value = ic->controller_mapping[i][a].data.axis.axis_modifier;
 					input_context_add_raw_mapping_at(ic, &e, i, -1, 0);
@@ -792,17 +792,17 @@ void input_context_apply_controller_mappings_for_controller(t_input_context *ic,
 	}
 }
 //---------------------------------------------------------------------------
-void input_context_remove_controller_mappings_for_controller(t_input_context *ic, SDL_JoystickID joystickid){
+void input_context_remove_controller_mappings_for_controller(t_input_context *ic, SDL_JoystickID joystick_id){
 	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
 		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
 			switch(ic->mapping[i][a].event.type){
 				case SDL_CONTROLLERBUTTONDOWN:
-					if(ic->mapping[i][a].event.cbutton.which == joystickid){
+					if(ic->mapping[i][a].event.cbutton.which == joystick_id){
 						ic->mapping[i][a].active = 0;
 					}
 					break;
 				case SDL_CONTROLLERAXISMOTION:
-					if(ic->mapping[i][a].event.caxis.which == joystickid){
+					if(ic->mapping[i][a].event.caxis.which == joystick_id){
 						ic->mapping[i][a].active = 0;
 					}
 					break;
@@ -810,6 +810,28 @@ void input_context_remove_controller_mappings_for_controller(t_input_context *ic
 		}
 	}
 	// TODO: remove mapping alt gaps?
+}
+//---------------------------------------------------------------------------
+void unassign_controller_to_player(int player, int controller_idx){
+	if(player_use_controller[player] == controller_idx){
+		player_use_controller[player] = -1;
+		SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[controller_idx]));
+		input_context_remove_controller_mappings_for_controller(&input_context_player[player], joystick_id);
+	}
+}
+//---------------------------------------------------------------------------
+void assign_controller_to_player(int player, int controller_idx){
+	// make sure controller is unassigned from other players
+	for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
+		if(p != player){
+			unassign_controller_to_player(p, controller_idx);
+		}
+	}
+
+	player_use_controller[player] = controller_idx;
+	// apply default controller mappings
+	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[controller_idx]));
+	input_context_apply_controller_mappings_for_controller(&input_context_player[player], joystick_id);
 }
 //---------------------------------------------------------------------------
 /**
@@ -846,25 +868,27 @@ int add_gamecontroller(Uint16 joystick_index){
 	//save the gamecontroller name
 	strncpy(gamecontroller_name[joystick_index], SDL_GameControllerName(gamecontroller[joystick_index]), 16);
 
-	SDL_JoystickID joystickid = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[joystick_index]));
+	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[joystick_index]));
 	//find axis centers and associate with instance id
 	/*
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_LEFTX] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTX);
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_LEFTY] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTY);
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_RIGHTX] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTX);
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_RIGHTY] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTY);
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTX] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTX);
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTY] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTY);
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTX] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTX);
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTY] = SDL_GameControllerGetAxis(gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTY);
 	*/
 	// start with 0
 	// TODO: update based on observed values?
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_LEFTX]  = 0;
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_LEFTY]  = 0;
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_RIGHTX] = 0;
-	gamecontroller_axis_center[joystickid][SDL_CONTROLLER_AXIS_RIGHTY] = 0;
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTX]  = 0;
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTY]  = 0;
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTX] = 0;
+	gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTY] = 0;
 
 
 	// if(main_settings.debug){
 	//	printf("Game Controller %d initialized.\n", joystick_index);
 	// }
+
+	// TODO: First use SDL_GameControllerGetPlayerIndex (xinput user index) if possible
 
 	int pidx = 0;
 	// assign preferred joy guids to players
@@ -873,8 +897,6 @@ int add_gamecontroller(Uint16 joystick_index){
 	while((strncmp(player_prefer_controller[pidx], guid_str, 33) != 0) && (pidx < INPUT_MAX_PLAYERS)){
 		pidx++;
 	}
-
-	// TODO: use SDL_GameControllerGetPlayerIndex (xinput user index) if possible
 	if(pidx >= INPUT_MAX_PLAYERS){ // no prefs found 
 		// assign to first player that does not have a controller
 		pidx = 0;
@@ -883,9 +905,7 @@ int add_gamecontroller(Uint16 joystick_index){
 		}
 	}
 	if(pidx < INPUT_MAX_PLAYERS){
-		player_use_controller[pidx] = joystick_index;
-		// apply default controller mappings
-		input_context_apply_controller_mappings_for_controller(&input_context_player[pidx], joystickid);
+		void assign_controller_to_player(int player, int controller_idx);
 		// if(main_settings.debug){
 		//	printf("Game Controller %d assigned to player %d.\n", joystick_index, pidx);
 		// }
@@ -931,11 +951,7 @@ int remove_gamecontroller(Uint32 joystick_id){
         int player_idx;
         for(player_idx = 0; player_idx < INPUT_MAX_PLAYERS; player_idx++){
                 if(player_use_controller[player_idx] == controller_idx){
-                        player_use_controller[player_idx] = -1;
-			// remove controller mappings
-			input_context_remove_controller_mappings_for_controller(&input_context_player[player_idx], joystick_id);
-			// TODO: re-assign default player mappings?
-			// TODO: re-load config ?
+			unassign_controller_to_player(player_idx, joystick_id);
                         // if(main_settings.debug){
                         //        printf("Game Controller %d unassigned from player %d.\n", controller_idx, player_idx + 1);
                         // }
@@ -1166,12 +1182,12 @@ int input_load_gamecontrollerdb(){
 	return 0;
 }
 //---------------------------------------------------------------------------
+#ifdef USE_CONFIGURATION
 /** 
  * Load input config and add any matches to the context
  * Translate any controller which
  */
 int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_which){
-/*
 	if(!configuration_load()){
 		return 0;
 	}
@@ -1347,16 +1363,14 @@ int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_whi
 			}
 
 			if(got_valid_config){
-				input_context_add_raw_mapping_at(ic, &re, i, a);
+				input_context_add_raw_mapping_at(ic, &re, i, a, 0);
 			}
 		}
 	}
-*/
 	return 1;
 }
 //---------------------------------------------------------------------------
 int input_context_save_configuration(t_input_context *ic){
-/*	
 	char configstr[32];
 
 	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
@@ -1369,13 +1383,13 @@ int input_context_save_configuration(t_input_context *ic){
 				continue;
 			}
 			snprintf(configstr, 32, "%s_%d_type", ic->input[i].name, a);
-			configuration_set_int_value(configstr, im->event.type);
+			configuration_set_int_value(configstr, (int)im->event.type);
 
 			//todo: support other input event types
 			switch(im->event.type){
 				case SDL_KEYDOWN:
 					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.key.keysym.sym);
+					configuration_set_int_value(configstr, (int)im->event.key.keysym.sym);
 					// TODO: support loading mappings with keymods?
 					break;
 
@@ -1395,6 +1409,7 @@ int input_context_save_configuration(t_input_context *ic){
 
 				case SDL_CONTROLLERBUTTONDOWN:
 					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+					// todo: don't include controller button which
 					configuration_set_int_value(configstr, im->event.cbutton.which);
 					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
 					configuration_set_int_value(configstr, im->event.cbutton.button);
@@ -1432,12 +1447,10 @@ int input_context_save_configuration(t_input_context *ic){
 	}
 
 	return configuration_save();
-*/
 	return 1;
 }
 //---------------------------------------------------------------------------
 int input_player_prefer_controller_load_configuration(){
-/*
 	if(!configuration_load()){
 		return 0;
 	}
@@ -1450,12 +1463,10 @@ int input_player_prefer_controller_load_configuration(){
 			snprintf(player_prefer_controller[i], 33, "%s", str_val);
 		}
 	}
-*/
 	return 1;
 }
 //---------------------------------------------------------------------------
 int input_player_prefer_controller_save_configuration(){
-/*
 	char configstr[32] = {};
 
 	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
@@ -1465,9 +1476,9 @@ int input_player_prefer_controller_save_configuration(){
 		}
 	}
 	return configuration_save();
-*/
 	return 1;
 }
+#endif
 //---------------------------------------------------------------------------
 int input_init(){
 	num_joysticks = 0;

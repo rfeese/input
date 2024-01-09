@@ -1008,7 +1008,7 @@ void test_input_responds_to_device_added(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_player[0].mapping[p_up][0].active, "p_up should have an active mapping.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, input_context_player[0].mapping[p_up][0].event.type, "mapping should be SDL controller button event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLER_BUTTON_DPAD_UP, input_context_player[0].mapping[p_up][0].event.cbutton.button, "SDL controller DPAD UP should be mapped.");
-	// which comes from querying for the joystickid
+	// which comes from querying for the joystick_id
 	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input_context_player[0].mapping[p_up][0].event.cbutton.which, "SDL controller/joystick instance id 3 should be the which.");
 }
 
@@ -1016,7 +1016,7 @@ void test_input_responds_to_device_removed(){
 	testevents[0].type = SDL_JOYDEVICEREMOVED;
 	testevents[0].jdevice.which = 0; // which is instance id
 	joystick[0] = SDL_JoystickOpen(0);
-	joystickid[0] = (SDL_JoystickID)0;
+	joystick_id[0] = (SDL_JoystickID)0;
 	num_joysticks = 1;
 
 	testevents[1].type = SDL_CONTROLLERDEVICEREMOVED;
@@ -1062,7 +1062,7 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[0][1].active, "controller mapping should be removed.");
 }
  
-test_input_player_input_get_new_mapping_event(){
+void test_input_player_input_get_new_mapping_event(){
 
 	int p0_up = 0;
 	int p0_down = 1;
