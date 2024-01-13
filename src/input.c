@@ -905,7 +905,7 @@ int add_gamecontroller(Uint16 joystick_index){
 		}
 	}
 	if(pidx < INPUT_MAX_PLAYERS){
-		void assign_controller_to_player(int player, int controller_idx);
+		assign_controller_to_player(pidx, joystick_index);
 		// if(main_settings.debug){
 		//	printf("Game Controller %d assigned to player %d.\n", joystick_index, pidx);
 		// }
@@ -928,7 +928,7 @@ int remove_gamecontroller(Uint32 joystick_id){
 
 	int retval = -1;
 
-        //figure out which controller corresponds
+        // figure out which controller corresponds to the device id
 	SDL_GameController *controller = SDL_GameControllerFromInstanceID(joystick_id);
         int controller_idx;
         for(controller_idx = 0; controller_idx < INPUT_MAX_JOYSTICKS && (gamecontroller[controller_idx] != controller); controller_idx++){
@@ -951,9 +951,9 @@ int remove_gamecontroller(Uint32 joystick_id){
         int player_idx;
         for(player_idx = 0; player_idx < INPUT_MAX_PLAYERS; player_idx++){
                 if(player_use_controller[player_idx] == controller_idx){
-			unassign_controller_to_player(player_idx, joystick_id);
+			unassign_controller_to_player(player_idx, controller_idx);
                         // if(main_settings.debug){
-                        //        printf("Game Controller %d unassigned from player %d.\n", controller_idx, player_idx + 1);
+                        //        printf("Game Controller %d unassigned from player %d.\n", controller_idx, player_idx);
                         // }
 
                         // send player index affected

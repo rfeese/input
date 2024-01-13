@@ -12,7 +12,7 @@ typedef struct _SDL_GameController{
 	int id;
 } SDL_GameController;
 
-SDL_GameController my_gamecontrollers[4] = { {.id = 3}, {.id = 4},{.id = 5},{.id = 6} };
+SDL_GameController my_gamecontrollers[4] = { {.id = 3}, {.id = 4},{.id = 5},{.id = 6} }; // device ids
 int my_gamecontrollers_idx = 0;
 SDL_GameController *SDL_GameControllerOpen(int joystick_index){
 	if(my_gamecontrollers_idx > 3){
@@ -956,12 +956,13 @@ void test_input_poll(){
 void test_input_responds_to_device_added(){
 	num_joysticks = 0;
 	num_gamecontrollers = 0;
+	int device_idx = 0;
 
 	testevents[0].type = SDL_JOYDEVICEADDED;
-	testevents[0].jdevice.which = 1; // which is device index
+	testevents[0].jdevice.which = device_idx; // which is device index in add event
 
 	testevents[1].type = SDL_CONTROLLERDEVICEADDED;
-	testevents[1].cdevice.which = 1; // which is device index
+	testevents[1].cdevice.which = device_idx; // which is device index in add event
 
 	SDL_Event re = {};
 	t_input_event ie = {};
@@ -1000,7 +1001,7 @@ void test_input_responds_to_device_added(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, num_gamecontrollers, "num_gamecontrollers should be 1.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, player_use_controller[0], "controller device index 1 should be assigned to player 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(device_idx, player_use_controller[0], "controller device index 1 should be assigned to player 0.");
 
 	// check for notification of controller assigned to player connected
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have an event from controller connected.");
@@ -1015,17 +1016,23 @@ void test_input_responds_to_device_added(){
 }
 
 void test_input_responds_to_device_removed(){
+	int jdevice_idx = 0;
+	// from my_joysticks
+	int jdevice_id = my_joysticks[0].id;
 	testevents[0].type = SDL_JOYDEVICEREMOVED;
-	testevents[0].jdevice.which = 0; // which is instance id
-	joystick[0] = SDL_JoystickOpen(0);
-	joystick_id[0] = (SDL_JoystickID)0;
+	testevents[0].jdevice.which = jdevice_id; // which is instance id in remove event
+	joystick[jdevice_idx] = SDL_JoystickOpen(jdevice_idx);
+	joystick_id[jdevice_idx] = (SDL_JoystickID)jdevice_id;
 	num_joysticks = 1;
 
+	int cdevice_idx = 0;
+	// from my_controllers
+	int cdevice_id = my_gamecontrollers[0].id;
 	testevents[1].type = SDL_CONTROLLERDEVICEREMOVED;
-	testevents[1].cdevice.which = 3; // which is instance id
+	testevents[1].cdevice.which = cdevice_id; // which is instance id in remove event
 	num_gamecontrollers = 1;
-	player_use_controller[0] = 0;
-	gamecontroller[0] = SDL_GameControllerOpen(0);
+	player_use_controller[0] = cdevice_idx; // device index
+	gamecontroller[cdevice_idx] = SDL_GameControllerOpen(cdevice_idx);
 
 	SDL_Event re = {};
 	t_input_event ie = {};
@@ -1055,7 +1062,7 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_gamecontrollers, "num_gamecontrollers should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, player_use_controller[0], "controller 0 should be unassigned from player 0.");
 	
-	// check for notification of controller assigned to player connected
+	// check for notification of controller assigned to player disconnected
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have an event from controller disconnected.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_DISCONNECT, ie.type, "Should have received controller disconnected event.");
 
