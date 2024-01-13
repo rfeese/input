@@ -489,9 +489,9 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have_ie){
 	// check context to see if any remappings match ie
 	int remapped = 0;
-	for(int i = 0; !remapped && (i < INPUT_MAX_CONTEXT_INPUTS); i++){
-		for(int a = 0; !remapped && (a < INPUT_MAX_ALT_MAPPINGS); a++){
-			if(ic->remap[i][a].active && (ic->remap[i][a].src_input_id == ie->input_id)){
+	for(int i = 0; !remapped && (i < INPUT_MAX_CONTEXT_INPUTS) && ic->input[i].defined; i++){
+		for(int a = 0; !remapped && (a < INPUT_MAX_ALT_MAPPINGS) && ic->remap[i][a].active; a++){
+			if(ic->remap[i][a].src_input_id == ie->input_id){
 				remapped = 1;
 
 				t_input *ri = &ic->input[i]; // re-mapped destination input
@@ -1096,10 +1096,10 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 
 	if(*have_re){
 		// apply to contexts
-		for(int c = 0; ic[c] && (c < INPUT_MAX_CONTEXTS); c++){
-			for(int i = 0; *have_re && (i < INPUT_MAX_CONTEXT_INPUTS); i++){
-				for(int a = 0; *have_re && (a < INPUT_MAX_ALT_MAPPINGS); a++){
-					if(ic[c]->mapping[i][a].active && mapping_matches_raw_event(&(ic[c]->mapping[i][a]), re)){
+		for(int c = 0; (c < INPUT_MAX_CONTEXTS) && ic[c]; c++){
+			for(int i = 0; *have_re && (i < INPUT_MAX_CONTEXT_INPUTS) && ic[c]->input[i].defined; i++){
+				for(int a = 0; *have_re && (a < INPUT_MAX_ALT_MAPPINGS) && ic[c]->mapping[i][a].active; a++){
+					if(mapping_matches_raw_event(&(ic[c]->mapping[i][a]), re)){
 						// consume raw event
 						*have_re = 0;
 						more_to_poll = 1;
@@ -1107,9 +1107,9 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 						// if event is an axis type and value has crossed center, 
 						// check other for inputs mapped to the axis in the current context
 						if((re->type == SDL_JOYAXISMOTION) || (re->type == SDL_CONTROLLERAXISMOTION)){
-							for(int i2 = i + 1; i2 < INPUT_MAX_CONTEXT_INPUTS; i2++){
-								for(int a2 = 0; a2 < INPUT_MAX_ALT_MAPPINGS; a2++){
-									if(ic[c]->mapping[i2][a2].active && mapping_matches_raw_event(&(ic[c]->mapping[i2][a2]), re)){
+							for(int i2 = i + 1; i2 < INPUT_MAX_CONTEXT_INPUTS && ic[c]->input[i2].defined; i2++){
+								for(int a2 = 0; a2 < INPUT_MAX_ALT_MAPPINGS && ic[c]->mapping[i2][a2].active; a2++){
+									if(mapping_matches_raw_event(&(ic[c]->mapping[i2][a2]), re)){
 										// if an event is generated, it will be placed in buffer
 										if(input_update_state(&(ic[c]->input[i2]), re, &input_event_buffer, &(ic[c]->mapping[i2][a2]))){
 											// other event found, stop looking

@@ -288,12 +288,14 @@ void test_input_context_remap_event(){
 	int ui_up = 3;
 	int p0_missle = 32;
 	t_input_context ic = {};
+	ic.input[0].defined = 1;
 	ic.input[0].id = ui_activate;
 	ic.input[0].type = IT_BUTTON;
 	ic.input[0].data.button.repeat_delay = INPUT_DEFAULT_REPEAT_DELAY;
 	ic.input[0].data.button.repeat_time = INPUT_DEFAULT_REPEAT_TIME;
 	ic.remap[0][0].active = 1;
 	ic.remap[0][0].src_input_id = p0_fire;
+	ic.input[1].defined = 1;
 	ic.input[1].id = ui_up;
 	ic.input[1].type = IT_BUTTON;
 	ic.input[1].data.button.repeat_delay = INPUT_DEFAULT_REPEAT_DELAY;
