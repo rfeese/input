@@ -230,11 +230,32 @@ void input_context_add_raw_mapping_at(t_input_context *ic, const SDL_Event *e, U
 		return;
 	}
 
-	// if the mapping already exists in the context, deactivate it
+	// if the mapping already exists in the context, remove it
 	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
 		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
 			if(ic->mapping[i][a].active && mapping_matches_raw_event(&ic->mapping[i][a], e)){
-				ic->mapping[i][a].active = 0;
+				// for axis events, we also have to check value
+				switch(ic->mapping[i][a].event.type){
+					case SDL_JOYAXISMOTION:
+						if((ic->mapping[i][a].event.jaxis.value > 0) == (e->jaxis.value > 0)){
+							ic->mapping[i][a].active = 0;
+						}
+						break;
+					case SDL_CONTROLLERAXISMOTION:
+						if((ic->mapping[i][a].event.caxis.value > 0) == (e->caxis.value > 0)){
+							ic->mapping[i][a].active = 0;
+						}
+						break;
+					default:
+						ic->mapping[i][a].active = 0;
+						break;
+				}
+				// if removed, close gap
+				if(!ic->mapping[i][a].active){
+					for(int a2 = a; a2 < INPUT_MAX_ALT_MAPPINGS - 1; a2++){
+						ic->mapping[i][a2] = ic->mapping[i][a2 + 1];
+					}
+				}
 			}
 		}
 	}
