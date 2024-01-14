@@ -60,6 +60,12 @@ void input_context_add_input_at(t_input_context *ic, const char name[], t_input_
 			ic->input[input_idx].data.pointing_device.repeat_delay = INPUT_DEFAULT_REPEAT_DELAY;
 			ic->input[input_idx].data.pointing_device.repeat_time = INPUT_DEFAULT_REPEAT_TIME;
 			break;
+		case IT_ANALOG_SCALAR:
+			// TODO: set defaults
+			break;
+		case IT_ANALOG_DIRECTION:
+			// TODO: set defaults
+			break;
 	}
 }
 //---------------------------------------------------------------------------
@@ -96,7 +102,11 @@ void input_context_input_set_repeat_time(t_input_context *ic, int input_id, int 
 		case IT_POINTING_DEVICE:
 			ic->input[i].data.pointing_device.repeat_time = repeat_time;
 			break;
-
+		// no repeats
+		case IT_ANALOG_SCALAR:
+		case IT_ANALOG_DIRECTION:
+		case IT_TRIGGER:
+			break;
 	}
 }
 //---------------------------------------------------------------------------
@@ -116,7 +126,11 @@ void input_context_input_set_repeat_delay(t_input_context *ic, int input_id, int
 		case IT_POINTING_DEVICE:
 			ic->input[i].data.pointing_device.repeat_delay = repeat_delay;
 			break;
-
+		// no repeats
+		case IT_ANALOG_SCALAR:
+		case IT_ANALOG_DIRECTION:
+		case IT_TRIGGER:
+			break;
 	}
 }
 //---------------------------------------------------------------------------
@@ -500,6 +514,10 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 				return 1;
 			}
 			break;
+		// don't generate events?
+		case IT_ANALOG_SCALAR:
+		case IT_ANALOG_DIRECTION:
+			break;
 	}
 	return 0;
 }
@@ -545,6 +563,13 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 									*have_ie = 0;
 								}
 								return;
+								break;
+							// can't be remapped
+							case IE_CONTROLLER_CONNECT:
+							case IE_CONTROLLER_DISCONNECT:
+							case IE_EXIT_REQUEST:
+							case IE_LOST_FOCUS:
+							case IE_NONE:
 								break;
 						}
 						return;
@@ -604,6 +629,13 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								}
 								return;
 								break;
+							// can't be remapped
+							case IE_CONTROLLER_CONNECT:
+							case IE_CONTROLLER_DISCONNECT:
+							case IE_EXIT_REQUEST:
+							case IE_LOST_FOCUS:
+							case IE_NONE:
+								break;
 						}
 						return;
 						break;
@@ -639,6 +671,10 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 						}
 						return;
 						break;
+					// not event-generating?
+					case IT_ANALOG_SCALAR:
+					case IT_ANALOG_DIRECTION:
+						break;
 				}
 			}
 		}
@@ -657,6 +693,10 @@ void input_context_reset(t_input_context *ic){
 					break;
 				case IT_POINTING_DEVICE:
 					ic->input[i].data.pointing_device.state = 0;
+					break;
+				// TODO: init structures
+				case IT_ANALOG_SCALAR:
+				case IT_ANALOG_DIRECTION:
 					break;
 			}
 		}
@@ -689,6 +729,13 @@ void input_context_apply_input_event(t_input_context *ic, t_input_event *ie){
 						ic->input[i].data.pointing_device.x = ie->data.pointing_device_move.x;
 						ic->input[i].data.pointing_device.y = ie->data.pointing_device_move.y;
 					}
+					break;
+				// nothing to apply
+				case IE_CONTROLLER_CONNECT:
+				case IE_CONTROLLER_DISCONNECT:
+				case IE_EXIT_REQUEST:
+				case IE_LOST_FOCUS:
+				case IE_NONE:
 					break;
 			}
 		}
@@ -1058,6 +1105,10 @@ int input_check_for_repeat(t_input *input, t_input_event *ie, int *have_ie){
 			break;
 		case IT_TRIGGER:
 			// do nothing -- triggers do not repeat.
+			break;
+		// no repeats?
+		case IT_ANALOG_SCALAR:
+		case IT_ANALOG_DIRECTION:
 			break;
 	}
 	return 0;
@@ -1749,6 +1800,21 @@ void input_event_print(struct s_input_event *ie){
 			break;
 		case IE_POINTING_DEVICE_MOVE:
 			printf("ie: pd move %d\n", ie->input_id);
+			break;
+		case IE_CONTROLLER_CONNECT:
+			printf("ie: controller connected\n");
+			break;
+		case IE_CONTROLLER_DISCONNECT:
+			printf("ie: controller disconnected\n");
+			break;
+		case IE_EXIT_REQUEST:
+			printf("ie: exit request\n");
+			break;
+		case IE_LOST_FOCUS:
+			printf("ie: lost focus\n");
+			break;
+		case IE_NONE:
+			printf("ie: none\n");
 			break;
 	}
 }
