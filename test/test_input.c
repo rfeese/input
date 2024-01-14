@@ -663,8 +663,8 @@ void test_input_poll(){
 	gc.mapping[0][0].event.key.keysym.mod = KMOD_NONE;
 
 	// player context
-	int p0_up = 2;
 	t_input_context pc = {};
+	int p0_up = 2;
 	pc.input[0].defined = 1;
 	pc.input[0].id = p0_up;
 	strncpy(pc.input[0].name, "p0_up", INPUT_NAME_LENGTH);
@@ -673,6 +673,17 @@ void test_input_poll(){
 	pc.mapping[0][0].event.type = SDL_KEYDOWN;
 	pc.mapping[0][0].event.key.keysym.sym = SDLK_k;
 	pc.mapping[0][0].event.key.keysym.mod = KMOD_NONE;
+
+	int p0_down = 8;
+	pc.input[1].defined = 1;
+	pc.input[1].id = p0_down;
+	strncpy(pc.input[1].name, "p0_down", INPUT_NAME_LENGTH);
+	pc.input[1].type = IT_BUTTON;
+	pc.mapping[1][0].active = 1;
+	pc.mapping[1][0].event.type = SDL_KEYDOWN;
+	pc.mapping[1][0].event.key.keysym.sym = SDLK_m;
+	pc.mapping[1][0].event.key.keysym.mod = KMOD_NONE;
+
 
 	// editor common context
 	ec_input1 = 3;
@@ -891,12 +902,33 @@ void test_input_poll(){
 	pc.mapping[0][0].event.caxis.axis = 1;
 	pc.mapping[0][0].event.caxis.value = -1;
 
-	// wrong which
+	//p0_down
+	pc.mapping[1][0].active = 1;
+	pc.mapping[1][0].event.type = SDL_CONTROLLERAXISMOTION;
+	pc.mapping[1][0].event.caxis.which = 0;
+	pc.mapping[1][0].event.caxis.axis = 1;
+	pc.mapping[1][0].event.caxis.value = 1;
+
+	// set input states to axis centered
+	pc.input[0].data.button.state = 0;
+	pc.input[1].data.button.state = 0;
+
+	// wrong device which
 	testevents[0].type = SDL_CONTROLLERAXISMOTION;
 	testevents[0].caxis.which = 1;
 	testevents[0].caxis.axis = 1;
 	testevents[0].caxis.value = -30000;
 	testevents_index = 0;
+
+	// reduce contexts to player context only so re-mappings are not performed
+	contexts[0] = &pc;
+	contexts[1] = NULL;
+	contexts[2] = NULL;
+	contexts[3] = NULL;
+	contexts[4] = NULL;
+	// eliminate handlers
+	handlers[0] = NULL;
+	handlers[1] = NULL;
 
 	have_ie = 0;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
@@ -910,27 +942,34 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
-	// wrong direction
+	// p0_down direction
+	testevents[0].caxis.which = 0;
 	testevents[0].caxis.axis = 1;
 	testevents[0].caxis.value = 30000;
 	testevents_index = 0;
 	
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_down, ie.input_id, "event should have been for p0_down.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ie.data.button.state, "event button state should be 1.");
 
-	// not beyond threshold
+	// p0_up, but not beyond threshold
 	testevents[0].caxis.value = -100;
 	testevents_index = 0;
-	
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
-	// matching event
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_down, ie.input_id, "event should have been for p0_down.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ie.data.button.state, "event button state should be 0.");
+
+	// p0_up matching event
 	testevents[0].caxis.value = -30000;
 	testevents_index = 0;
 	
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_up, ie.input_id, "event should have been for p0_up.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ie.data.button.state, "event button state should be 1.");
 
 	// mapping active status
 	//p0_up

@@ -1048,7 +1048,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 	*have_ie = 0;
 	int more_to_poll = 0;
 
-	// if there was a previously buffered event, use it
+	// if there was a previously buffered event, use it and clear buffer
 	if(input_event_buffer.type != IE_NONE ){
 		*ie = input_event_buffer;
 		input_event_buffer.type = IE_NONE;
@@ -1104,27 +1104,36 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 						*have_re = 0;
 						more_to_poll = 1;
 
-						// if event is an axis type and value has crossed center, 
-						// check other for inputs mapped to the axis in the current context
-						if((re->type == SDL_JOYAXISMOTION) || (re->type == SDL_CONTROLLERAXISMOTION)){
-							for(int i2 = i + 1; i2 < INPUT_MAX_CONTEXT_INPUTS && ic[c]->input[i2].defined; i2++){
-								for(int a2 = 0; a2 < INPUT_MAX_ALT_MAPPINGS && ic[c]->mapping[i2][a2].active; a2++){
-									if(mapping_matches_raw_event(&(ic[c]->mapping[i2][a2]), re)){
-										// if an event is generated, it will be placed in buffer
-										if(input_update_state(&(ic[c]->input[i2]), re, &input_event_buffer, &(ic[c]->mapping[i2][a2]))){
-											// other event found, stop looking
-											a2 = INPUT_MAX_ALT_MAPPINGS;
-											i2 = INPUT_MAX_CONTEXT_INPUTS;
-										}
-									}
-								}
-							}
-						}
-
 						// update input states
 						if(input_update_state(&(ic[c]->input[i]), re, ie, &(ic[c]->mapping[i][a]))){
 							*have_ie = 1;
 
+						}
+
+						// if event was an axis type,
+						// check other for remaining context inputs that may be mapped to the same axis
+						if((re->type == SDL_JOYAXISMOTION) || (re->type == SDL_CONTROLLERAXISMOTION)){
+							for(int i2 = i + 1; i2 < INPUT_MAX_CONTEXT_INPUTS && ic[c]->input[i2].defined; i2++){
+								for(int a2 = 0; a2 < INPUT_MAX_ALT_MAPPINGS && ic[c]->mapping[i2][a2].active; a2++){
+									if(mapping_matches_raw_event(&(ic[c]->mapping[i2][a2]), re)){
+									
+										// if we already have an event, use the buffer
+										if(*have_ie){
+											if(input_update_state(&(ic[c]->input[i2]), re, &input_event_buffer, &(ic[c]->mapping[i2][a2]))){
+											}
+										}
+										else {
+											if(input_update_state(&(ic[c]->input[i2]), re, ie, &(ic[c]->mapping[i2][a2]))){
+												*have_ie = 1;
+											}
+										}
+
+										// other mapping found -- stop looking
+										a2 = INPUT_MAX_ALT_MAPPINGS;
+										i2 = INPUT_MAX_CONTEXT_INPUTS;
+									}
+								}
+							}
 						}
 					}
 				}
