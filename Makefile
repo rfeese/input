@@ -1,16 +1,26 @@
-LIBS = `pkg-config sdl2 --libs`
+CC=$(CROSS)gcc
+PKG_CONFIG=$(CROSS)pkg-config
+CFLAGS=-g -Wall
+CFLAGS += `$(PKG_CONFIG) sdl2 --cflags`
+LIBS = `$(PKG_CONFIG) sdl2 --libs`
 ifdef USE_CONFIGURATION
 	LIBS += -lconfiguration
+	CFLAGS += -DUSE_CONFIGURATION
 endif
+
+.PHONY: all clean install test test_clean
 
 all: example
 
-example: example.c src/input.c
-	$(CC) -g example.c src/input.c $(LIBS) -o $@
+example: example.c src/input.o
+	$(CC) $(CFLAGS) example.c src/input.o $(LIBS) -o $@
+
+install:
+	make --directory src $@
 
 #delete compiled binaries
 clean:
-	- rm src/*.o
+	make --directory src $@
 	- rm example
 
 #buid and run tests
@@ -20,4 +30,3 @@ test:
 test_clean:
 	$(MAKE) --directory test $@
 
-.PHONY: all clean test test_clean
