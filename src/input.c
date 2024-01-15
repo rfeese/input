@@ -274,19 +274,10 @@ void input_context_add_raw_mapping_at(t_input_context *ic, const SDL_Event *e, U
 		}
 	}
 
-	// see if there is an unused spot
-	int spot = 0;
-	for(spot = 0; ic->mapping[input_idx][spot].active && (spot < INPUT_MAX_ALT_MAPPINGS); spot++){
-	}
-
-	if(spot >= INPUT_MAX_ALT_MAPPINGS){
-		// no spot. Will shift last mapping off end
-		spot = INPUT_MAX_ALT_MAPPINGS - 1;
-	}
-
-	// move everything to make room
-	for(spot; spot > 0; spot--){
-		ic->mapping[input_idx][spot] = ic->mapping[input_idx][spot - 1];
+	// shift all mappings to make room in first spot
+	for(int a = INPUT_MAX_ALT_MAPPINGS - 1; a > 0; a--){
+		ic->mapping[input_idx][a] = ic->mapping[input_idx][a - 1];
+		ic->default_mapping[input_idx][a] = ic->default_mapping[input_idx][a - 1];
 	}
 
 	// add new mapping in first spot
@@ -310,15 +301,6 @@ int input_context_add_raw_mapping(t_input_context *ic, Uint32 input_id, const SD
 	// not found
 	if((i >= INPUT_MAX_CONTEXT_INPUTS) || !ic->input[i].defined){
 		return 0;
-	}
-
-	// deactivate any existing duplicate mapping
-	for(int di = 0; di < INPUT_MAX_CONTEXT_INPUTS; di++){
-		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
-			if(ic->mapping[di][a].active && mapping_matches_raw_event(&ic->mapping[di][a], e)){
-				ic->mapping[di][a].active = 0;
-			}
-		}
 	}
 
 	input_context_add_raw_mapping_at(ic, e, i, -1, is_default);
