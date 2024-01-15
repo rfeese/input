@@ -3,6 +3,9 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef USE_CONFIGURATION
+#include <configuration.h>
+#endif
 #include "src/input.h"
 
 
@@ -95,13 +98,27 @@ struct s_input_context ic_ui = {
 };
 
 void ih_global(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie){
-	if(have_ie){
+	if(*have_ie){
 		if(ie->input_id == i_global_exit){
 			printf("Got GLOBAL_EXIT.\n");
 			SDL_Quit();
 			exit(EXIT_SUCCESS);
 		}
 	}
+}
+
+void ih_controller_events(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie){
+	if(*have_ie){
+	       	if(ie->type == IE_CONTROLLER_CONNECT){
+			printf("a controller was connected.\n");
+			return;
+		}
+	       	if(ie->type == IE_CONTROLLER_DISCONNECT){
+			printf("a controller was disconnected.\n");
+			return;
+		}
+	}
+	return;
 }
 
 int main(int argc, char* argv[]){
@@ -180,11 +197,18 @@ int main(int argc, char* argv[]){
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_A }});
 
 
+#ifdef USE_CONFIGURATION
+	// Load config
+	configuration_init("input_example", "config.ini");
+	input_player_prefer_controller_load_configuration();
+	input_context_load_configuration(&input_context_player[0], 1);
+#endif
+
 	SDL_Event re = {};
 	t_input_event ie = {};
 	int have_re = 0;
 	int have_ie = 0;
-	input_handler ih[INPUT_MAX_CONTEXTS] = { &ih_global };
+	input_handler ih[INPUT_MAX_CONTEXTS] = { &ih_global, &ih_controller_events };
 	int exit_signal = 0;
 
 	printf("Looking for global and player input.\n");
@@ -202,15 +226,6 @@ int main(int argc, char* argv[]){
 
 			// handle defined input events
 			if(have_ie){
-				if(ie.type == IE_CONTROLLER_CONNECT){
-					printf("controller connected.\n");
-					continue;
-				}
-				if(ie.type == IE_CONTROLLER_DISCONNECT){
-					printf("controller disconnected.\n");
-					continue;
-				}
-
 				// look for specific events
 				switch(ie.input_id){
 					case I_P0_UP:
@@ -245,6 +260,11 @@ int main(int argc, char* argv[]){
 				if(re.type == SDL_KEYDOWN && re.key.keysym.sym == SDLK_q){
 					exit_signal = 1;
 					printf("Got local quit.\n");
+				}
+				if(re.type == SDL_KEYUP && re.key.keysym.sym == SDLK_c){
+					printf("Enter new input for FIRE\n");
+					input_player_input_get_new_mapping_event(0, P_FIRE, -1, 10000);
+					printf("Done.\n");
 				}
 			}
 
@@ -300,6 +320,10 @@ int main(int argc, char* argv[]){
 		SDL_Delay(5);
 	}
 
+#ifdef USE_CONFIGURATION
+	input_player_prefer_controller_save_configuration();
+	input_context_save_configuration(&input_context_player[0]);
+#endif
 	SDL_Quit();
 	return EXIT_SUCCESS;
 }

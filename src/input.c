@@ -882,6 +882,9 @@ void assign_controller_to_player(int player, int controller_idx){
 	// apply default controller mappings
 	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[controller_idx]));
 	input_context_apply_controller_mappings_for_controller(&input_context_player[player], joystick_id);
+#ifdef USE_CONFIGURATION
+	input_context_load_configuration(&input_context_player[player], 1);
+#endif
 }
 //---------------------------------------------------------------------------
 /**
@@ -1132,7 +1135,6 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 			if(add_gamecontroller(re->cdevice.which) >= 0){ // which is device index
 				*have_ie = 1;
 				ie->type = IE_CONTROLLER_CONNECT;
-				return 1;
 			}
 		}
 		if(re->type == SDL_CONTROLLERDEVICEREMOVED){
@@ -1140,7 +1142,6 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 			if(remove_gamecontroller(re->cdevice.which) >= 0){ // which is instance id
 				*have_ie = 1;
 				ie->type = IE_CONTROLLER_DISCONNECT;
-				return 1;
 			}
 		}
 
@@ -1519,11 +1520,16 @@ int input_player_prefer_controller_load_configuration(){
 	}
 
 	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
-		char configstr[32] = {};
-		snprintf(configstr, 32, "p_%d_prefer_controller", i);
+		char configstr[33] = {};
+		snprintf(configstr, 33, "p_%d_prefer_controller", i);
 		const char *str_val = NULL;
 		if(configuration_get_str_value(configstr, &str_val)){
-			snprintf(player_prefer_controller[i], 33, "%s", str_val);
+			if(strncmp(str_val, "none", 33) != 0){
+				snprintf(player_prefer_controller[i], 33, "%s", str_val);
+			}
+			else {
+				snprintf(player_prefer_controller[i], 33, "%s", "");
+			}	
 		}
 	}
 	return 1;
@@ -1534,8 +1540,15 @@ int input_player_prefer_controller_save_configuration(){
 
 	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
 		snprintf(configstr, 32, "p_%d_prefer_controller", i);
-		if(!configuration_set_str_value(configstr, player_prefer_controller[i])){
-			printf("Error: %s\n", configuration_get_error());
+		if(strnlen(player_prefer_controller[i], 33) > 0){
+			if(!configuration_set_str_value(configstr, player_prefer_controller[i])){
+				printf("Error: %s\n", configuration_get_error());
+			}
+		}
+		else {
+			if(!configuration_set_str_value(configstr, "none")){
+				printf("Error: %s\n", configuration_get_error());
+			}
 		}
 	}
 	return configuration_save();
@@ -1678,7 +1691,7 @@ const char *input_event_get_name(SDL_Event *event){
  * waits for a valid user input event to map to a specified control.
  * timeout after timeout milliseconds -1 = never
  */
-void input_player_input_get_new_mapping_event(int player, int input_idx, Uint8 alt, Uint32 timeout){
+void input_player_input_get_new_mapping_event(int player, int input_idx, int alt, Uint32 timeout){
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { };
 	SDL_Event re = {};

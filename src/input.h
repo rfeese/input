@@ -197,5 +197,5 @@ int input_player_prefer_controller_save_configuration();
 #endif
 int input_init();
 const char *input_event_get_name(SDL_Event *event);
-void input_player_input_get_new_mapping_event(int player, int input_idx, Uint8 alt, Uint32 timeout);
+void input_player_input_get_new_mapping_event(int player, int input_idx, int alt, Uint32 timeout);
 #endif //INPUT_H
