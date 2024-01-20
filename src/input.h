@@ -142,10 +142,6 @@ typedef struct s_input_event {
 } t_input_event;
 
 
-// config key value pair format
-typedef struct { char key[32]; char value[32]; } t_input_config_item;
-
-
 #define INPUT_MAX_PLAYERS	4
 #define	INPUT_MAX_JOYSTICKS	8
 #define INPUT_MAX_JOYSTICK_AXES	2
