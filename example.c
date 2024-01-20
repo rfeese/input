@@ -298,9 +298,7 @@ int main(int argc, char* argv[]){
 						}
 						break;
 					case I_UI_SELECT:
-						if(ie.data.button.state){
-							printf("Got i_ui_select.\n");
-						}
+						printf("Got i_ui_select.\n");
 						break;
 					case I_UI_PD:
 						switch(ie.type){
