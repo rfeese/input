@@ -16,11 +16,11 @@ example: example.c src/input.o
 	$(CC) $(CFLAGS) example.c src/input.o $(LIBS) -o $@
 
 install:
-	make --directory src $@
+	$(MAKE) --directory src $@
 
 #delete compiled binaries
 clean:
-	make --directory src $@
+	$(MAKE) --directory src $@
 	- rm example
 
 #buid and run tests
