@@ -311,6 +311,9 @@ int main(int argc, char* argv[]){
 								if(ie.data.pointing_device_button.state){
 									printf("Got i_pd button.\n");
 								}
+								break;
+							default:
+								break;
 						}
 						break;
 
