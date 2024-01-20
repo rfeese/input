@@ -527,6 +527,8 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 							case IE_BUTTON: // translate to trigger only if button down
 								if(ie->data.button.state){
 									ie->input_id = ri->id;
+									// translate the ie type
+									ie->type = IE_TRIGGER;
 								}
 								else {
 									*have_ie = 0;
@@ -535,11 +537,15 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								break;
 							case IE_POINTING_DEVICE_MOVE:
 								ie->input_id = ri->id;
+								// translate the ie type
+								ie->type = IE_TRIGGER;
 								return;
 								break;
 							case IE_POINTING_DEVICE_BUTTON:
 								if(ie->data.button.state){
 									ie->input_id = ri->id;
+									// translate the ie type
+									ie->type = IE_TRIGGER;
 								}
 								else {
 									*have_ie = 0;
@@ -564,6 +570,9 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 									ri->data.button.state = 1;
 									ri->data.button.time_activated = SDL_GetTicks();
 									ie->input_id = ri->id;
+									// translate the ie type
+									ie->type = IE_BUTTON;
+									ie->data.button.state = 1;
 								}
 								else{
 									ri->data.button.repeating = 0;
@@ -594,8 +603,12 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								return;
 								break;
 							case IE_POINTING_DEVICE_BUTTON:
+								ie->input_id = ri->id;
 								if(ri->data.button.state != ie->data.pointing_device_button.state){
 									ri->data.button.state = ie->data.pointing_device_button.state;
+									// translate the ie type
+									ie->type = IE_BUTTON;
+									ie->data.button.state = ri->data.button.state;
 									if(ri->data.button.state){
 										ri->data.button.time_activated = SDL_GetTicks();
 									}
@@ -603,7 +616,6 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 										ri->data.button.repeating = 0;
 									}
 
-									ie->input_id = ri->id;
 									return;
 								}
 								else {
@@ -623,36 +635,85 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 						break;
 
 					case IT_POINTING_DEVICE:
-						if(ie->type == IE_POINTING_DEVICE_BUTTON){
-							// update pointing device x and y
-							ri->data.pointing_device.x = ie->data.pointing_device_button.x;
-							ri->data.pointing_device.y = ie->data.pointing_device_button.y;
-							if(ri->data.pointing_device.state != ie->data.pointing_device_button.state){
-								ri->data.pointing_device.state = ie->data.pointing_device_button.state;
-								// update time activated
-								if(ri->data.pointing_device.state){
+						switch(ie->type){
+							case IE_TRIGGER: // update state of button
+								if(!ri->data.pointing_device.state){
+									ri->data.pointing_device.state = 1;
 									ri->data.pointing_device.time_activated = SDL_GetTicks();
+									ie->input_id = ri->id;
+									// translate the ie type
+									ie->type = IE_POINTING_DEVICE_BUTTON;
+									ie->data.pointing_device_button.state = 1;
+									ie->data.pointing_device_button.x = ri->data.pointing_device.x;
+									ie->data.pointing_device_button.y = ri->data.pointing_device.y;
+								}
+								else{
+									ri->data.pointing_device.repeating = 0;
+									*have_ie = 0;
+								}
+								return;
+								break;
+							case IE_BUTTON:
+								if(ri->data.pointing_device.state != ie->data.button.state){
+									ri->data.pointing_device.state = ie->data.button.state;
+									// translate the ie type
+									ie->type = IE_POINTING_DEVICE_BUTTON;
+									ie->data.pointing_device_button.state = 1;
+									ie->data.pointing_device_button.x = ri->data.pointing_device.x;
+									ie->data.pointing_device_button.y = ri->data.pointing_device.y;
+									if(ri->data.button.state){
+										ri->data.button.time_activated = SDL_GetTicks();
+									}
+									else{
+										ri->data.button.repeating = 0;
+									}
+
+									ie->input_id = ri->id;
 								}
 								else {
-									ri->data.pointing_device.repeating = 0;
+									// if the buton state does not change, consume the ie
+									*have_ie = 0;
 								}
+								return;
+								break;
+							case IE_POINTING_DEVICE_BUTTON:
+								// update pointing device x and y
+								ri->data.pointing_device.x = ie->data.pointing_device_button.x;
+								ri->data.pointing_device.y = ie->data.pointing_device_button.y;
+								if(ri->data.pointing_device.state != ie->data.pointing_device_button.state){
+									ri->data.pointing_device.state = ie->data.pointing_device_button.state;
+									// update time activated
+									if(ri->data.pointing_device.state){
+										ri->data.pointing_device.time_activated = SDL_GetTicks();
+									}
+									else {
+										ri->data.pointing_device.repeating = 0;
+									}
 
+									ie->input_id = ri->id;
+								}
+								else {
+									*have_ie = 0;
+								}
+								return;
+								break;
+							case IE_POINTING_DEVICE_MOVE:
+								ri->data.pointing_device.x = ie->data.pointing_device_move.x;
+								ri->data.pointing_device.y = ie->data.pointing_device_move.y;
+								
 								ie->input_id = ri->id;
-							}
-							else {
 								*have_ie = 0;
-							}
-							return;
+								return;
+								break;
+							// can't be remapped
+							case IE_CONTROLLER_CONNECT:
+							case IE_CONTROLLER_DISCONNECT:
+							case IE_EXIT_REQUEST:
+							case IE_LOST_FOCUS:
+							case IE_NONE:
+								break;
 						}
-						if(ie->type == IE_POINTING_DEVICE_MOVE){
-							ri->data.pointing_device.x = ie->data.pointing_device_move.x;
-							ri->data.pointing_device.y = ie->data.pointing_device_move.y;
-							
-							ie->input_id = ri->id;
-							*have_ie = 0;
-						}
-						return;
-						break;
+
 					// not event-generating?
 					case IT_ANALOG_SCALAR:
 					case IT_ANALOG_DIRECTION:
