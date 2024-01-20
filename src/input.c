@@ -1488,7 +1488,7 @@ int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_whi
 			}
 
 			if(got_valid_config){
-				input_context_add_raw_mapping_at(ic, &re, i, a, 0);
+				input_context_add_raw_mapping_at(ic, &re, i, -1, 0);
 			}
 		}
 	}
