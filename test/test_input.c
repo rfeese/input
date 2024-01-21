@@ -272,11 +272,11 @@ void setUp(void){
 //runs after each test
 void tearDown(void){
 	for(int i = 0; i < INPUT_MAX_JOYSTICKS; i++){
-		joystick[i] = NULL;
-		gamecontroller[i] = NULL;
+		input.joystick[i] = NULL;
+		input.gamecontroller[i] = NULL;
 	}
 	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
-		player_use_controller[i] = -1;
+		input.player_use_controller[i] = -1;
 	}
 }
 
@@ -993,8 +993,8 @@ void test_input_poll(){
 }
 
 void test_input_responds_to_device_added(){
-	num_joysticks = 0;
-	num_gamecontrollers = 0;
+	input.num_joysticks = 0;
+	input.num_gamecontrollers = 0;
 	int device_idx = 0;
 
 	testevents[0].type = SDL_JOYDEVICEADDED;
@@ -1012,46 +1012,46 @@ void test_input_responds_to_device_added(){
 	int p_left = 2;
 	int p_right = 3;
 	int p_fire = 4;
-	input_context_player[0].input[p_up].defined = 1;
-	input_context_player[0].input[p_down].defined = 1;
-	input_context_player[0].input[p_left].defined = 1;
-	input_context_player[0].input[p_right].defined = 1;
-	input_context_player[0].input[p_fire].defined = 1;
-	input_context_player[0].controller_mapping[p_up][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON; 
-	input_context_player[0].controller_mapping[p_up][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
-	input_context_player[0].controller_mapping[p_down][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input_context_player[0].controller_mapping[p_down][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
-	input_context_player[0].controller_mapping[p_left][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input_context_player[0].controller_mapping[p_left][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
-	input_context_player[0].controller_mapping[p_right][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input_context_player[0].controller_mapping[p_right][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
-	input_context_player[0].controller_mapping[p_fire][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input_context_player[0].controller_mapping[p_fire][0].data.button = SDL_CONTROLLER_BUTTON_A;
+	input.context_player[0].input[p_up].defined = 1;
+	input.context_player[0].input[p_down].defined = 1;
+	input.context_player[0].input[p_left].defined = 1;
+	input.context_player[0].input[p_right].defined = 1;
+	input.context_player[0].input[p_fire].defined = 1;
+	input.context_player[0].controller_mapping[p_up][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON; 
+	input.context_player[0].controller_mapping[p_up][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
+	input.context_player[0].controller_mapping[p_down][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	input.context_player[0].controller_mapping[p_down][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
+	input.context_player[0].controller_mapping[p_left][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	input.context_player[0].controller_mapping[p_left][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
+	input.context_player[0].controller_mapping[p_right][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	input.context_player[0].controller_mapping[p_right][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+	input.context_player[0].controller_mapping[p_fire][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	input.context_player[0].controller_mapping[p_fire][0].data.button = SDL_CONTROLLER_BUTTON_A;
 
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { NULL };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { NULL };
 
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_joysticks, "Initial num_joysticks should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_joysticks, "Initial num_joysticks should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, num_joysticks, "num_joysticks should be 1.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_joysticks, "num_joysticks should be 1.");
 
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_gamecontrollers, "Initial num_gamecontrollers should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gamecontrollers, "Initial num_gamecontrollers should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, num_gamecontrollers, "num_gamecontrollers should be 1.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(device_idx, player_use_controller[0], "controller device index 1 should be assigned to player 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_gamecontrollers, "num_gamecontrollers should be 1.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(device_idx, input.player_use_controller[0], "controller device index 1 should be assigned to player 0.");
 
 	// check for notification of controller assigned to player connected
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have an event from controller connected.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_CONNECT, ie.type, "Should have received controller connected event.");
 
 	// check that controller mappings applied to player context
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_player[0].mapping[p_up][0].active, "p_up should have an active mapping.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, input_context_player[0].mapping[p_up][0].event.type, "mapping should be SDL controller button event.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLER_BUTTON_DPAD_UP, input_context_player[0].mapping[p_up][0].event.cbutton.button, "SDL controller DPAD UP should be mapped.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.context_player[0].mapping[p_up][0].active, "p_up should have an active mapping.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, input.context_player[0].mapping[p_up][0].event.type, "mapping should be SDL controller button event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLER_BUTTON_DPAD_UP, input.context_player[0].mapping[p_up][0].event.cbutton.button, "SDL controller DPAD UP should be mapped.");
 	// which comes from querying for the joystick_id
-	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input_context_player[0].mapping[p_up][0].event.cbutton.which, "SDL controller/joystick instance id 3 should be the which.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input.context_player[0].mapping[p_up][0].event.cbutton.which, "SDL controller/joystick instance id 3 should be the which.");
 }
 
 void test_input_responds_to_device_removed(){
@@ -1060,18 +1060,18 @@ void test_input_responds_to_device_removed(){
 	int jdevice_id = my_joysticks[0].id;
 	testevents[0].type = SDL_JOYDEVICEREMOVED;
 	testevents[0].jdevice.which = jdevice_id; // which is instance id in remove event
-	joystick[jdevice_idx] = SDL_JoystickOpen(jdevice_idx);
-	joystick_id[jdevice_idx] = (SDL_JoystickID)jdevice_id;
-	num_joysticks = 1;
+	input.joystick[jdevice_idx] = SDL_JoystickOpen(jdevice_idx);
+	input.joystick_id[jdevice_idx] = (SDL_JoystickID)jdevice_id;
+	input.num_joysticks = 1;
 
 	int cdevice_idx = 0;
 	// from my_controllers
 	int cdevice_id = my_gamecontrollers[0].id;
 	testevents[1].type = SDL_CONTROLLERDEVICEREMOVED;
 	testevents[1].cdevice.which = cdevice_id; // which is instance id in remove event
-	num_gamecontrollers = 1;
-	player_use_controller[0] = cdevice_idx; // device index
-	gamecontroller[cdevice_idx] = SDL_GameControllerOpen(cdevice_idx);
+	input.num_gamecontrollers = 1;
+	input.player_use_controller[0] = cdevice_idx; // device index
+	input.gamecontroller[cdevice_idx] = SDL_GameControllerOpen(cdevice_idx);
 
 	SDL_Event re = {};
 	t_input_event ie = {};
@@ -1081,51 +1081,51 @@ void test_input_responds_to_device_removed(){
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { NULL };
 
 	// controller mappings to be remvoed when controller device is unassigned
-	input_context_player[0].mapping[0][0].active = 1;
-	input_context_player[0].mapping[0][0].event.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
-	input_context_player[0].mapping[0][0].event.cbutton.which = 3;
-	input_context_player[0].mapping[0][0].event.cbutton.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
-	input_context_player[0].mapping[0][1].active = 1;
-	input_context_player[0].mapping[0][1].event.caxis.type = SDL_CONTROLLERAXISMOTION;
-	input_context_player[0].mapping[0][1].event.caxis.which = 3;
-	input_context_player[0].mapping[0][1].event.caxis.axis = SDL_CONTROLLER_AXIS_LEFTY;
-	input_context_player[0].mapping[0][1].event.caxis.value = -1;
+	input.context_player[0].mapping[0][0].active = 1;
+	input.context_player[0].mapping[0][0].event.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
+	input.context_player[0].mapping[0][0].event.cbutton.which = 3;
+	input.context_player[0].mapping[0][0].event.cbutton.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
+	input.context_player[0].mapping[0][1].active = 1;
+	input.context_player[0].mapping[0][1].event.caxis.type = SDL_CONTROLLERAXISMOTION;
+	input.context_player[0].mapping[0][1].event.caxis.which = 3;
+	input.context_player[0].mapping[0][1].event.caxis.axis = SDL_CONTROLLER_AXIS_LEFTY;
+	input.context_player[0].mapping[0][1].event.caxis.value = -1;
 
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_joysticks, "num_joysticks should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_joysticks, "num_joysticks should be 0.");
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_gamecontrollers, "num_gamecontrollers should be 0.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, player_use_controller[0], "controller 0 should be unassigned from player 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gamecontrollers, "num_gamecontrollers should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, input.player_use_controller[0], "controller 0 should be unassigned from player 0.");
 	
 	// check for notification of controller assigned to player disconnected
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have an event from controller disconnected.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_DISCONNECT, ie.type, "Should have received controller disconnected event.");
 
 	// check that controller mappings have been removed from player context
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[0][0].active, "controller mapping should be removed.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[0][1].active, "controller mapping should be removed.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[0][0].active, "controller mapping should be removed.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[0][1].active, "controller mapping should be removed.");
 }
  
 void test_input_player_input_get_new_mapping_event(){
 
 	int p0_up = 0;
 	int p0_down = 1;
-	input_context_player[0].input[p0_up].defined = 1;
-	input_context_player[0].input[p0_up].id = p0_up;
-	input_context_player[0].input[p0_up].type = IT_BUTTON;
-	input_context_player[0].mapping[p0_up][0].active = 1;
-	input_context_player[0].mapping[p0_up][0].event.type = SDL_KEYDOWN;
-	input_context_player[0].mapping[p0_up][0].event.key.keysym.sym = SDLK_UP;
-	input_context_player[0].input[p0_down].defined = 1;
-	input_context_player[0].input[p0_down].id = p0_down;
-	input_context_player[0].input[p0_down].type = IT_BUTTON;
-	input_context_player[0].mapping[p0_down][0].active = 1;
-	input_context_player[0].mapping[p0_down][0].event.type = SDL_KEYDOWN;
-	input_context_player[0].mapping[p0_down][0].event.key.keysym.sym = SDLK_DOWN;
+	input.context_player[0].input[p0_up].defined = 1;
+	input.context_player[0].input[p0_up].id = p0_up;
+	input.context_player[0].input[p0_up].type = IT_BUTTON;
+	input.context_player[0].mapping[p0_up][0].active = 1;
+	input.context_player[0].mapping[p0_up][0].event.type = SDL_KEYDOWN;
+	input.context_player[0].mapping[p0_up][0].event.key.keysym.sym = SDLK_UP;
+	input.context_player[0].input[p0_down].defined = 1;
+	input.context_player[0].input[p0_down].id = p0_down;
+	input.context_player[0].input[p0_down].type = IT_BUTTON;
+	input.context_player[0].mapping[p0_down][0].active = 1;
+	input.context_player[0].mapping[p0_down][0].event.type = SDL_KEYDOWN;
+	input.context_player[0].mapping[p0_down][0].event.key.keysym.sym = SDLK_DOWN;
 
 	// remap down to up
 	testevents_index = 0;
@@ -1134,8 +1134,8 @@ void test_input_player_input_get_new_mapping_event(){
 	testevents[0].key.keysym.mod = KMOD_NONE;
 
 	input_player_input_get_new_mapping_event(0, p0_down, -1, 10);
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_UP, input_context_player[0].mapping[p0_down][0].event.key.keysym.sym, "p0_down mapping should have been updated.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input_context_player[0].mapping[p0_up][0].active, "p0_up mapping should have been unset.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_UP, input.context_player[0].mapping[p0_down][0].event.key.keysym.sym, "p0_down mapping should have been updated.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[p0_up][0].active, "p0_up mapping should have been unset.");
 }
 
 /*
@@ -1232,40 +1232,40 @@ void test_controller_add_remove(){
 	configuration.loaded = 1;
 	configuration.num_items = 0;
 
-	num_gamecontrollers = 0;
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, num_gamecontrollers, "Initial num_gamecontrollers should be 0.");
+	input.num_gamecontrollers = 0;
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gamecontrollers, "Initial num_gamecontrollers should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, num_gamecontrollers, "num_gamecontrollers should be 1.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_gamecontrollers, "num_gamecontrollers should be 1.");
 
 	TEST_ASSERT_EQUAL_PTR_MESSAGE(&my_gamecontrollers[0], gamecontroller[0], "First game controller should go in first slot.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, player_use_controller[0], "Player 1 should use first controller.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[0])), input_context_player[0].mapping[P_UP][0].event.cbutton.which, "Player 1 mappings should be assigned to first controller instance_id.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.player_use_controller[0], "Player 1 should use first controller.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[0])), input.context_player[0].mapping[P_UP][0].event.cbutton.which, "Player 1 mappings should be assigned to first controller instance_id.");
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(2, num_gamecontrollers, "num_gamecontrollers should be 2.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(2, input.num_gamecontrollers, "num_gamecontrollers should be 2.");
 
 	TEST_ASSERT_EQUAL_PTR_MESSAGE(&my_gamecontrollers[1], gamecontroller[1], "Second game controller should go in second slot.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, player_use_controller[1], "Player 2 should use second controller.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[1])), input_context_player[1].mapping[P_UP][0].event.cbutton.which, "Player 2 mappings should be assigned to second controller instance_id.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.player_use_controller[1], "Player 2 should use second controller.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[1])), input.context_player[1].mapping[P_UP][0].event.cbutton.which, "Player 2 mappings should be assigned to second controller instance_id.");
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(3, num_gamecontrollers, "num_gamecontrollers should be 3.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input.num_gamecontrollers, "num_gamecontrollers should be 3.");
 	
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(2, num_gamecontrollers, "num_gamecontrollers should be 2.");
-	TEST_ASSERT_NULL_MESSAGE(gamecontroller[0], "First game controller should be NULL.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, player_use_controller[0], "Player 1 should not have a controller assigned.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(2, input.num_gamecontrollers, "num_gamecontrollers should be 2.");
+	TEST_ASSERT_NULL_MESSAGE(input.gamecontroller[0], "First game controller should be NULL.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, input.player_use_controller[0], "Player 1 should not have a controller assigned.");
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(3, num_gamecontrollers, "num_gamecontrollers should be 3.");
-	TEST_ASSERT_EQUAL_PTR_MESSAGE(&my_gamecontrollers[3], gamecontroller[0], "4th game controller should go in first slot.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, player_use_controller[0], "Player 1 should use first controller.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[0])), input_context_player[0].mapping[P_UP][0].event.cbutton.which, "Player 1 mappings should be assigned to first controller instance_id.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input.num_gamecontrollers, "num_gamecontrollers should be 3.");
+	TEST_ASSERT_EQUAL_PTR_MESSAGE(&my_gamecontrollers[3], input.gamecontroller[0], "4th game controller should go in first slot.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.player_use_controller[0], "Player 1 should use first controller.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(gamecontroller[0])), input.context_player[0].mapping[P_UP][0].event.cbutton.which, "Player 1 mappings should be assigned to first controller instance_id.");
 
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(2, num_gamecontrollers, "num_gamecontrollers should be 2.");
-	TEST_ASSERT_NULL_MESSAGE(gamecontroller[2], "3rd game controller should be NULL.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(2, input.num_gamecontrollers, "num_gamecontrollers should be 2.");
+	TEST_ASSERT_NULL_MESSAGE(input.gamecontroller[2], "3rd game controller should be NULL.");
 }
 */
 
@@ -1277,8 +1277,8 @@ void test_input_player_prefer_controller_load_configuration(){
 
 /*
 void test_input_player_prefer_controller_save_configuration(){
-	snprintf(player_prefer_controller[0], 33, "%s", "joystick_guid0");
-	snprintf(player_prefer_controller[1], 33, "%s", "joystick_guid1");
+	snprintf(input.player_prefer_controller[0], 33, "%s", "joystick_guid0");
+	snprintf(input.player_prefer_controller[1], 33, "%s", "joystick_guid1");
 	snprintf(configuration.filename, 32, "test_input_saved.ini");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_player_prefer_controller_save_configuration(), "Should be able to save player prefer controller.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_player_prefer_controller_load_configuration(), "Should have reloaded successfully.");

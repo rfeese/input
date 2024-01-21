@@ -145,21 +145,30 @@ typedef struct s_input_event {
 #define INPUT_MAX_PLAYERS	4
 #define	INPUT_MAX_JOYSTICKS	8
 #define INPUT_MAX_JOYSTICK_AXES	2
-extern Uint32 num_joysticks;
-extern SDL_Joystick *joystick[INPUT_MAX_JOYSTICKS]; // joysticks by device index
-extern SDL_JoystickID joystick_id[INPUT_MAX_JOYSTICKS]; // mapping of device index to instance_id instance id is used in events
-extern Sint16 joy_axis_center[INPUT_MAX_JOYSTICKS][INPUT_MAX_JOYSTICK_AXES]; // joytick axis centers, by instance
-extern Sint16 joy_axis_threshold; // TODO: make this adustable per stick
 
-extern Uint32 num_gamecontrollers;
-extern SDL_GameController *gamecontroller[INPUT_MAX_JOYSTICKS]; // controllers by device index
-extern Sint16 gamecontroller_axis_center[INPUT_MAX_JOYSTICKS][SDL_CONTROLLER_AXIS_MAX]; // controller axis centers, by instance
-extern char gamecontroller_name[INPUT_MAX_JOYSTICKS][32]; // names by device index
-extern Sint32 player_use_controller[INPUT_MAX_PLAYERS]; // controller device index assigned to players
-extern char player_prefer_controller[INPUT_MAX_PLAYERS][33]; // which joystick guid a player prefers -- SDL joy GUID str 33 chars
+typedef struct s_input_data {
+	Uint32 num_joysticks;
+	SDL_Joystick *joystick[INPUT_MAX_JOYSTICKS]; // joysticks by device index
+	SDL_JoystickID joystick_id[INPUT_MAX_JOYSTICKS]; // mapping of device index to instance_id instance id is used in events
+	Sint16 joy_axis_center[INPUT_MAX_JOYSTICKS][INPUT_MAX_JOYSTICK_AXES]; // joytick axis centers, by instance
+	Sint16 joy_axis_threshold; // TODO: make this adustable per stick
 
-// built-in player input contexts. Other input contexts may be added.
-extern struct s_input_context input_context_player[INPUT_MAX_PLAYERS];
+	Uint32 num_gamecontrollers;
+	SDL_GameController *gamecontroller[INPUT_MAX_JOYSTICKS]; // controllers by device index
+	Sint16 gamecontroller_axis_center[INPUT_MAX_JOYSTICKS][SDL_CONTROLLER_AXIS_MAX]; // controller axis centers, by instance
+	char gamecontroller_name[INPUT_MAX_JOYSTICKS][32]; // names by device index
+	Sint32 player_use_controller[INPUT_MAX_PLAYERS]; // controller device index assigned to players
+	char player_prefer_controller[INPUT_MAX_PLAYERS][33]; // which joystick guid a player prefers -- SDL joy GUID str 33 chars
+
+	Uint32 last_id;
+
+	t_input_event event_buffer; // buffer for one event for cases where an event can affect more than one input
+
+	// built-in player input contexts. Other input contexts may be added.
+	struct s_input_context context_player[INPUT_MAX_PLAYERS];
+} t_input_data;
+
+extern t_input_data input;
 
 void input_context_add_input_at(t_input_context *ic, const char name[], t_input_type type, Uint8 input_idx, Uint32 input_id);
 int input_context_add_input(t_input_context *ic, const char name[], t_input_type type, int input_id);
