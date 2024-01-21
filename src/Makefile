@@ -2,6 +2,8 @@
 
 all: input.o
 
+input.o: input.c input.h
+
 clean:
 	- rm *.o
 	- rm *.a
