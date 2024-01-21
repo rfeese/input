@@ -1,18 +1,26 @@
-CC=$(CROSS)gcc
-PKG_CONFIG=$(CROSS)pkg-config
-CFLAGS=-g -Wall
+export CC=$(CROSS)gcc
+export PKG_CONFIG=$(CROSS)pkg-config
+export CFLAGS=-g -Wall
 CFLAGS += `$(PKG_CONFIG) sdl2 --cflags`
 LIBS = `$(PKG_CONFIG) sdl2 --libs`
 ifdef USE_CONFIGURATION
 	LIBS += -lconfiguration
 	CFLAGS += -DUSE_CONFIGURATION
 endif
+export LIBS
+export CFLAGS
+export DESTDIR
 
-.PHONY: all clean install test test_clean
+SRCDIR=src
+
+.PHONY: all clean install test test_clean $(SRCDIR)
 
 all: example
 
-example: example.c src/input.o
+$(SRCDIR):
+	$(MAKE) --directory $@
+
+example: example.c $(SRCDIR)
 	$(CC) $(CFLAGS) example.c src/input.o $(LIBS) -o $@
 
 install:
