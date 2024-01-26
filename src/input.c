@@ -943,7 +943,7 @@ void assign_controller_to_player(int player, int controller_idx){
 	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[controller_idx]));
 	input_context_apply_controller_mappings_for_controller(&input.context_player[player], joystick_id);
 #ifdef USE_CONFIGURATION
-	input_context_load_configuration(&input.context_player[player], 1);
+	input_context_load_configuration(&input.context_player[player], joystick_id);
 #endif
 }
 //---------------------------------------------------------------------------
