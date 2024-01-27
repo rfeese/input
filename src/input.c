@@ -919,7 +919,16 @@ void input_context_remove_controller_mappings_for_controller(t_input_context *ic
 			}
 		}
 	}
-	// TODO: remove mapping alt gaps?
+	// remove mapping alt gaps
+        for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
+                for(int a = INPUT_MAX_ALT_MAPPINGS - 2; a >= 0; a--){
+                        if(!ic->mapping[i][a].active){
+                                for(int a2 = a; a2 < INPUT_MAX_ALT_MAPPINGS - 1; a2++){
+                                        ic->mapping[i][a2] = ic->mapping[i][a2 + 1];
+                                }
+                        }
+                }
+        }
 }
 //---------------------------------------------------------------------------
 void unassign_controller_to_player(int player, int controller_idx){
