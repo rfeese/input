@@ -166,6 +166,10 @@ typedef struct s_input_data {
 
 	// built-in player input contexts. Other input contexts may be added.
 	struct s_input_context context_player[INPUT_MAX_PLAYERS];
+	void (*callback_quit)();
+	void (*callback_resized)(int width, int height);
+	void (*callback_toggle_fullscreen)();
+	int exit_signal; // universal context exit signal
 } t_input_data;
 
 extern t_input_data input;
@@ -195,7 +199,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 
 int input_load_gamecontrollerdb();
 #ifdef USE_CONFIGURATION
-int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_which);
+int input_context_load_configuration(t_input_context *ic, int translate_gc_which);
 int input_context_save_configuration(t_input_context *ic);
 int input_player_prefer_controller_load_configuration();
 int input_player_prefer_controller_save_configuration();

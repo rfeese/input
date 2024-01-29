@@ -27,7 +27,12 @@ t_input_data input = {
 	.event_buffer = { .type = IE_NONE }, // buffer for one event for cases where an event can affect more than one input
 
 	// player input contexts always exist. Others may be added.
-	.context_player = { { } }
+	.context_player = { { } },
+
+	.callback_quit = NULL,
+	.callback_resized = NULL,
+	.callback_toggle_fullscreen = NULL,
+	.exit_signal = 0,
 };
 
 
@@ -1214,7 +1219,36 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 			}
 		}
 
-		// TODO: exit signal (window close, etc)
+		// context exit
+		if((re->type == SDL_KEYDOWN) && (re->key.keysym.sym == SDLK_ESCAPE)){
+			*have_re = 0;
+			input.exit_signal = 1;
+		}
+	
+		//  respond to quit signal (window close, etc)
+		if(re->type == SDL_QUIT){
+			*have_re = 0;
+			if(input.callback_quit){
+				*have_ie = 1;
+				ie->type = IE_EXIT_REQUEST;
+				input.callback_quit();
+			}
+			exit(EXIT_SUCCESS);;
+		}
+
+		if((re->type == SDL_WINDOWEVENT) && (re->window.event == SDL_WINDOWEVENT_RESIZED)){
+			if(input.callback_resized){
+				*have_re = 0;
+				input.callback_resized(re->window.data1, re->window.data2);
+			}
+		}
+
+		if((re->type == SDL_KEYDOWN) && (re->key.keysym.sym == SDLK_f) && (re->key.keysym.mod & KMOD_ALT)){
+			if(input.callback_toggle_fullscreen){
+				*have_re = 0;
+				input.callback_toggle_fullscreen();
+			}
+		}
 		// TODO: lost focus signal (window minimize, etc)
 	}
 
@@ -1320,7 +1354,7 @@ int input_load_gamecontrollerdb(){
  * Load input config and add any matches to the context
  * Translate any controller which
  */
-int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_which){
+int input_context_load_configuration(t_input_context *ic, int translate_gc_which){
 	if(!configuration_load()){
 		return 0;
 	}
@@ -1390,8 +1424,12 @@ int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_whi
 						break;
 
 					case SDL_CONTROLLERBUTTONDOWN:
-						if(translate_gc_which < 0){
+						if(!configuration_get_int_value(configstrwhich, &input_which)){
+							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
 							continue;
+						}
+						if(translate_gc_which >= 0){
+							input_which = translate_gc_which;
 						}
 						input_which = translate_gc_which;
 						re.type = SDL_CONTROLLERBUTTONDOWN;
@@ -1417,13 +1455,16 @@ int input_context_load_configuration(t_input_context *ic, Uint8 translate_gc_whi
 						break;
 
 					case SDL_CONTROLLERAXISMOTION:
-						if(translate_gc_which < 0){ 
+						if(!configuration_get_int_value(configstrwhich, &input_which)){
+							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
 							continue;
 						}
-						input_which = translate_gc_which;
 						if(!configuration_get_int_value(configstraxis, &input_axis)){
 							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
 							continue;
+						}
+						if(translate_gc_which >= 0){ 
+							input_which = translate_gc_which;
 						}
 						re.type = SDL_CONTROLLERAXISMOTION;
 						re.caxis.which = (SDL_JoystickID) input_which;
