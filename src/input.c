@@ -1221,8 +1221,8 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 
 		// context exit
 		if((re->type == SDL_KEYDOWN) && (re->key.keysym.sym == SDLK_ESCAPE)){
-			*have_re = 0;
 			input.exit_signal = 1;
+			// allow the raw event to fall through
 		}
 	
 		//  respond to quit signal (window close, etc)
