@@ -26,8 +26,9 @@ t_input_data input = {
 
 	.event_buffer = { .type = IE_NONE }, // buffer for one event for cases where an event can affect more than one input
 
-	// player input contexts always exist. Others may be added.
-	.context_player = { { } },
+	// sets of known player input contexts -- to be updated when controllers are assigned
+	// indexed by player index
+	.player_context = { },
 
 	.callback_quit = NULL,
 	.callback_resized = NULL,
@@ -940,7 +941,11 @@ void unassign_controller_to_player(int player, int controller_idx){
 	if(input.player_use_controller[player] == controller_idx){
 		input.player_use_controller[player] = -1;
 		SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[controller_idx]));
-		input_context_remove_controller_mappings_for_controller(&input.context_player[player], joystick_id);
+		for(int i = 0; i < INPUT_MAX_PLAYER_CONTEXTS; i++){
+			if(input.player_context[i][player]){
+				input_context_remove_controller_mappings_for_controller(input.player_context[i][player], joystick_id);
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------------
@@ -955,10 +960,14 @@ void assign_controller_to_player(int player, int controller_idx){
 	input.player_use_controller[player] = controller_idx;
 	// apply default controller mappings
 	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[controller_idx]));
-	input_context_apply_controller_mappings_for_controller(&input.context_player[player], joystick_id);
+	for(int i = 0; i < INPUT_MAX_PLAYER_CONTEXTS; i++){
+		if(input.player_context[i][player]){
+			input_context_apply_controller_mappings_for_controller(input.player_context[i][player], joystick_id);
 #ifdef USE_CONFIGURATION
-	input_context_load_configuration(&input.context_player[player], joystick_id);
+			input_context_load_configuration(input.player_context[i][player], joystick_id);
 #endif
+		}
+	}
 }
 //---------------------------------------------------------------------------
 /**
@@ -1801,7 +1810,7 @@ const char *input_event_get_name(SDL_Event *event){
  * waits for a valid user input event to map to a specified control.
  * timeout after timeout milliseconds -1 = never
  */
-void input_player_input_get_new_mapping_event(int player, int input_idx, int alt, Uint32 timeout){
+void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout){
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { };
 	SDL_Event re = {};
@@ -1885,11 +1894,11 @@ void input_player_input_get_new_mapping_event(int player, int input_idx, int alt
 	exit_signal = 0;
 
 	if(got_valid_event){
-		input_context_add_raw_mapping_at(&input.context_player[player], &re, input_idx, alt, 0);
+		input_context_add_raw_mapping_at(ic_player, &re, input_idx, alt, 0);
 	}
 
 	// reset controls
-	input_context_reset(&input.context_player[player]);
+	input_context_reset(ic_player);
 }
 //---------------------------------------------------------------------------
 void input_event_print(struct s_input_event *ie){

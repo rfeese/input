@@ -97,6 +97,8 @@ struct s_input_context ic_ui = {
 	}
 };
 
+struct s_input_context ic_player = {};
+
 void ih_global(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie){
 	if(*have_ie){
 		if(ie->input_id == i_global_exit){
@@ -132,6 +134,8 @@ int main(int argc, char* argv[]){
 	if(!input_init()){
 		printf("Error initializing input.\n");
 	}
+	// let the input system know about our player input context
+	input.player_context[0][0] = &ic_player;
 
 	// late context setup
 	// global ic
@@ -141,59 +145,59 @@ int main(int argc, char* argv[]){
 
 	// player input and default mappings
 	// P_UP
-	input_context_add_input_at(&input.context_player[0], "p0_up", IT_BUTTON, P_UP, I_P0_UP);
-	input_context_input_set_repeat_delay(&input.context_player[0], I_P0_UP, 0);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_input_at(&ic_player, "p0_up", IT_BUTTON, P_UP, I_P0_UP);
+	input_context_input_set_repeat_delay(&ic_player, I_P0_UP, 0);
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_UP, .key.keysym.mod = KMOD_NONE }, P_UP, 0, 1);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_w, .key.keysym.mod = KMOD_NONE }, P_UP, 1, 1);
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_UP, 
+	input_context_add_controller_mapping(&ic_player, I_P0_UP, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_DPAD_UP }});
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_UP, 
+	input_context_add_controller_mapping(&ic_player, I_P0_UP, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_AXIS, .data = { .axis.axis = SDL_CONTROLLER_AXIS_LEFTY, .axis.axis_modifier = -1 }});
 
 	// P_DOWN
-	input_context_add_input_at(&input.context_player[0], "p0_down", IT_BUTTON, P_DOWN, I_P0_DOWN);
-	input_context_input_set_repeat_delay(&input.context_player[0], I_P0_DOWN, 0);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_input_at(&ic_player, "p0_down", IT_BUTTON, P_DOWN, I_P0_DOWN);
+	input_context_input_set_repeat_delay(&ic_player, I_P0_DOWN, 0);
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_DOWN, .key.keysym.mod = KMOD_NONE }, P_DOWN, 0, 1);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_s, .key.keysym.mod = KMOD_NONE }, P_DOWN, 1, 1);
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_DOWN, 
+	input_context_add_controller_mapping(&ic_player, I_P0_DOWN, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_DPAD_DOWN }});
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_DOWN, 
+	input_context_add_controller_mapping(&ic_player, I_P0_DOWN, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_AXIS, .data = { .axis.axis = SDL_CONTROLLER_AXIS_LEFTY, .axis.axis_modifier = 1 }});
 
 	// P_LEFT
-	input_context_add_input_at(&input.context_player[0], "p0_left", IT_BUTTON, P_LEFT, I_P0_LEFT);
-	input_context_input_set_repeat_delay(&input.context_player[0], I_P0_LEFT, 0);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_input_at(&ic_player, "p0_left", IT_BUTTON, P_LEFT, I_P0_LEFT);
+	input_context_input_set_repeat_delay(&ic_player, I_P0_LEFT, 0);
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_LEFT, .key.keysym.mod = KMOD_NONE }, P_LEFT, 0, 1);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_a, .key.keysym.mod = KMOD_NONE }, P_LEFT, 1, 1);
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_LEFT, 
+	input_context_add_controller_mapping(&ic_player, I_P0_LEFT, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_DPAD_LEFT }});
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_LEFT, 
+	input_context_add_controller_mapping(&ic_player, I_P0_LEFT, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_AXIS, .data = { .axis.axis = SDL_CONTROLLER_AXIS_LEFTX, .axis.axis_modifier = -1 }});
 
 	// P_RIGHT
-	input_context_add_input_at(&input.context_player[0], "p0_right", IT_BUTTON, P_RIGHT, I_P0_RIGHT);
-	input_context_input_set_repeat_delay(&input.context_player[0], I_P0_RIGHT, 0);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_input_at(&ic_player, "p0_right", IT_BUTTON, P_RIGHT, I_P0_RIGHT);
+	input_context_input_set_repeat_delay(&ic_player, I_P0_RIGHT, 0);
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_RIGHT, .key.keysym.mod = KMOD_NONE }, P_RIGHT, 0, 1);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_d, .key.keysym.mod = KMOD_NONE }, P_RIGHT, 1, 1);
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_RIGHT, 
+	input_context_add_controller_mapping(&ic_player, I_P0_RIGHT, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT }});
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_RIGHT, 
+	input_context_add_controller_mapping(&ic_player, I_P0_RIGHT, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_AXIS, .data = { .axis.axis = SDL_CONTROLLER_AXIS_LEFTX, .axis.axis_modifier = 1 }});
 
 	// P_FIRE
-	input_context_add_input_at(&input.context_player[0], "p0_fire", IT_BUTTON, P_FIRE, I_P0_FIRE);
-	input_context_input_set_repeat_delay(&input.context_player[0], I_P0_FIRE, 0);
-	input_context_add_raw_mapping_at(&input.context_player[0], 
+	input_context_add_input_at(&ic_player, "p0_fire", IT_BUTTON, P_FIRE, I_P0_FIRE);
+	input_context_input_set_repeat_delay(&ic_player, I_P0_FIRE, 0);
+	input_context_add_raw_mapping_at(&ic_player, 
 			&(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_SPACE, .key.keysym.mod = KMOD_NONE }, P_FIRE, 0, 1);
-	input_context_add_controller_mapping(&input.context_player[0], I_P0_FIRE, 
+	input_context_add_controller_mapping(&ic_player, I_P0_FIRE, 
 			&(t_controller_mapping){ .type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON, .data = { .button = SDL_CONTROLLER_BUTTON_A }});
 
 
@@ -201,7 +205,7 @@ int main(int argc, char* argv[]){
 	// Load config
 	configuration_init("input_example", "config.ini");
 	input_player_prefer_controller_load_configuration();
-	input_context_load_configuration(&input.context_player[0], 1);
+	input_context_load_configuration(&ic_player, 1);
 #endif
 
 	SDL_Event re = {};
@@ -213,7 +217,7 @@ int main(int argc, char* argv[]){
 
 	printf("Looking for global and player input.\n");
 	// include global and player contexts
-	t_input_context *ic[INPUT_MAX_CONTEXTS] = { &ic_global, &input.context_player[0] };
+	t_input_context *ic[INPUT_MAX_CONTEXTS] = { &ic_global, &ic_player };
 	while(!exit_signal){
 		while(input_poll(&re, &ie, &have_re, &have_ie, ic, ih)){
 			// handle a raw input manually
@@ -251,7 +255,7 @@ int main(int argc, char* argv[]){
 
 	printf("Looking for global, player and ui input. Player input may be transforemed into ui input.\n");
 	// include global, player and ui contexts (mappings will be applied in order of contexts)
-	t_input_context *ic2[INPUT_MAX_CONTEXTS] = { &ic_global, &input.context_player[0], &ic_ui };
+	t_input_context *ic2[INPUT_MAX_CONTEXTS] = { &ic_global, &ic_player, &ic_ui };
 	exit_signal = 0;
 	while(!exit_signal){
 		while(input_poll(&re, &ie, &have_re, &have_ie, ic2, ih)){
@@ -263,7 +267,7 @@ int main(int argc, char* argv[]){
 				}
 				if(re.type == SDL_KEYUP && re.key.keysym.sym == SDLK_c){
 					printf("Enter new input for FIRE\n");
-					input_player_input_get_new_mapping_event(0, P_FIRE, -1, 10000);
+					input_player_input_get_new_mapping_event(0, &ic_player, P_FIRE, -1, 10000);
 					printf("Done.\n");
 				}
 			}
@@ -323,7 +327,7 @@ int main(int argc, char* argv[]){
 
 #ifdef USE_CONFIGURATION
 	input_player_prefer_controller_save_configuration();
-	input_context_save_configuration(&input.context_player[0]);
+	input_context_save_configuration(&ic_player);
 #endif
 	SDL_Quit();
 	return EXIT_SUCCESS;

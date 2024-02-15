@@ -1012,21 +1012,23 @@ void test_input_responds_to_device_added(){
 	int p_left = 2;
 	int p_right = 3;
 	int p_fire = 4;
-	input.context_player[0].input[p_up].defined = 1;
-	input.context_player[0].input[p_down].defined = 1;
-	input.context_player[0].input[p_left].defined = 1;
-	input.context_player[0].input[p_right].defined = 1;
-	input.context_player[0].input[p_fire].defined = 1;
-	input.context_player[0].controller_mapping[p_up][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON; 
-	input.context_player[0].controller_mapping[p_up][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
-	input.context_player[0].controller_mapping[p_down][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input.context_player[0].controller_mapping[p_down][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
-	input.context_player[0].controller_mapping[p_left][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input.context_player[0].controller_mapping[p_left][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
-	input.context_player[0].controller_mapping[p_right][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input.context_player[0].controller_mapping[p_right][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
-	input.context_player[0].controller_mapping[p_fire][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
-	input.context_player[0].controller_mapping[p_fire][0].data.button = SDL_CONTROLLER_BUTTON_A;
+	struct s_input_context ic_player = {};
+	ic_player.input[p_up].defined = 1;
+	ic_player.input[p_down].defined = 1;
+	ic_player.input[p_left].defined = 1;
+	ic_player.input[p_right].defined = 1;
+	ic_player.input[p_fire].defined = 1;
+	ic_player.controller_mapping[p_up][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON; 
+	ic_player.controller_mapping[p_up][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
+	ic_player.controller_mapping[p_down][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	ic_player.controller_mapping[p_down][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
+	ic_player.controller_mapping[p_left][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	ic_player.controller_mapping[p_left][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
+	ic_player.controller_mapping[p_right][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	ic_player.controller_mapping[p_right][0].data.button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+	ic_player.controller_mapping[p_fire][0].type = INPUT_CONTROLLER_MAPPINGTYPE_BUTTON;
+	ic_player.controller_mapping[p_fire][0].data.button = SDL_CONTROLLER_BUTTON_A;
+	input.player_context[0][0] = &ic_player;
 
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { NULL };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { NULL };
@@ -1047,11 +1049,11 @@ void test_input_responds_to_device_added(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_CONNECT, ie.type, "Should have received controller connected event.");
 
 	// check that controller mappings applied to player context
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.context_player[0].mapping[p_up][0].active, "p_up should have an active mapping.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, input.context_player[0].mapping[p_up][0].event.type, "mapping should be SDL controller button event.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLER_BUTTON_DPAD_UP, input.context_player[0].mapping[p_up][0].event.cbutton.button, "SDL controller DPAD UP should be mapped.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic_player.mapping[p_up][0].active, "p_up should have an active mapping.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, ic_player.mapping[p_up][0].event.type, "mapping should be SDL controller button event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLER_BUTTON_DPAD_UP, ic_player.mapping[p_up][0].event.cbutton.button, "SDL controller DPAD UP should be mapped.");
 	// which comes from querying for the joystick_id
-	TEST_ASSERT_EQUAL_INT_MESSAGE(3, input.context_player[0].mapping[p_up][0].event.cbutton.which, "SDL controller/joystick instance id 3 should be the which.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(3, ic_player.mapping[p_up][0].event.cbutton.which, "SDL controller/joystick instance id 3 should be the which.");
 }
 
 void test_input_responds_to_device_removed(){
@@ -1081,15 +1083,16 @@ void test_input_responds_to_device_removed(){
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { NULL };
 
 	// controller mappings to be remvoed when controller device is unassigned
-	input.context_player[0].mapping[0][0].active = 1;
-	input.context_player[0].mapping[0][0].event.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
-	input.context_player[0].mapping[0][0].event.cbutton.which = 3;
-	input.context_player[0].mapping[0][0].event.cbutton.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
-	input.context_player[0].mapping[0][1].active = 1;
-	input.context_player[0].mapping[0][1].event.caxis.type = SDL_CONTROLLERAXISMOTION;
-	input.context_player[0].mapping[0][1].event.caxis.which = 3;
-	input.context_player[0].mapping[0][1].event.caxis.axis = SDL_CONTROLLER_AXIS_LEFTY;
-	input.context_player[0].mapping[0][1].event.caxis.value = -1;
+	struct s_input_context ic_player = {};
+	ic_player.mapping[0][0].active = 1;
+	ic_player.mapping[0][0].event.cbutton.type = SDL_CONTROLLERBUTTONDOWN;
+	ic_player.mapping[0][0].event.cbutton.which = 3;
+	ic_player.mapping[0][0].event.cbutton.button = SDL_CONTROLLER_BUTTON_DPAD_UP;
+	ic_player.mapping[0][1].active = 1;
+	ic_player.mapping[0][1].event.caxis.type = SDL_CONTROLLERAXISMOTION;
+	ic_player.mapping[0][1].event.caxis.which = 3;
+	ic_player.mapping[0][1].event.caxis.axis = SDL_CONTROLLER_AXIS_LEFTY;
+	ic_player.mapping[0][1].event.caxis.value = -1;
 
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
@@ -1106,26 +1109,28 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_DISCONNECT, ie.type, "Should have received controller disconnected event.");
 
 	// check that controller mappings have been removed from player context
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[0][0].active, "controller mapping should be removed.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[0][1].active, "controller mapping should be removed.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic_player.mapping[0][0].active, "controller mapping should be removed.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic_player.mapping[0][1].active, "controller mapping should be removed.");
 }
  
 void test_input_player_input_get_new_mapping_event(){
 
 	int p0_up = 0;
 	int p0_down = 1;
-	input.context_player[0].input[p0_up].defined = 1;
-	input.context_player[0].input[p0_up].id = p0_up;
-	input.context_player[0].input[p0_up].type = IT_BUTTON;
-	input.context_player[0].mapping[p0_up][0].active = 1;
-	input.context_player[0].mapping[p0_up][0].event.type = SDL_KEYDOWN;
-	input.context_player[0].mapping[p0_up][0].event.key.keysym.sym = SDLK_UP;
-	input.context_player[0].input[p0_down].defined = 1;
-	input.context_player[0].input[p0_down].id = p0_down;
-	input.context_player[0].input[p0_down].type = IT_BUTTON;
-	input.context_player[0].mapping[p0_down][0].active = 1;
-	input.context_player[0].mapping[p0_down][0].event.type = SDL_KEYDOWN;
-	input.context_player[0].mapping[p0_down][0].event.key.keysym.sym = SDLK_DOWN;
+	struct s_input_context ic_player = {};
+	ic_player.input[p0_up].defined = 1;
+	ic_player.input[p0_up].id = p0_up;
+	ic_player.input[p0_up].type = IT_BUTTON;
+	ic_player.mapping[p0_up][0].active = 1;
+	ic_player.mapping[p0_up][0].event.type = SDL_KEYDOWN;
+	ic_player.mapping[p0_up][0].event.key.keysym.sym = SDLK_UP;
+	ic_player.input[p0_down].defined = 1;
+	ic_player.input[p0_down].id = p0_down;
+	ic_player.input[p0_down].type = IT_BUTTON;
+	ic_player.mapping[p0_down][0].active = 1;
+	ic_player.mapping[p0_down][0].event.type = SDL_KEYDOWN;
+	ic_player.mapping[p0_down][0].event.key.keysym.sym = SDLK_DOWN;
+	input.player_context[0][0] = &ic_player;
 
 	// remap down to up
 	testevents_index = 0;
@@ -1133,9 +1138,9 @@ void test_input_player_input_get_new_mapping_event(){
 	testevents[0].key.keysym.sym = SDLK_UP;
 	testevents[0].key.keysym.mod = KMOD_NONE;
 
-	input_player_input_get_new_mapping_event(0, p0_down, -1, 10);
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_UP, input.context_player[0].mapping[p0_down][0].event.key.keysym.sym, "p0_down mapping should have been updated.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.context_player[0].mapping[p0_up][0].active, "p0_up mapping should have been unset.");
+	input_player_input_get_new_mapping_event(0, &ic_player, p0_down, -1, 10);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_UP, ic_player.mapping[p0_down][0].event.key.keysym.sym, "p0_down mapping should have been updated.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic_player.mapping[p0_up][0].active, "p0_up mapping should have been unset.");
 }
 
 /*

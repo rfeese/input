@@ -143,6 +143,7 @@ typedef struct s_input_event {
 
 
 #define INPUT_MAX_PLAYERS	4
+#define INPUT_MAX_PLAYER_CONTEXTS	4
 #define	INPUT_MAX_JOYSTICKS	8
 #define INPUT_MAX_JOYSTICK_AXES	2
 
@@ -164,8 +165,9 @@ typedef struct s_input_data {
 
 	t_input_event event_buffer; // buffer for one event for cases where an event can affect more than one input
 
-	// built-in player input contexts. Other input contexts may be added.
-	struct s_input_context context_player[INPUT_MAX_PLAYERS];
+	// sets of known player input contexts -- to be updated when controllers are assigned
+	// indexed by player index
+	struct s_input_context *player_context[INPUT_MAX_PLAYER_CONTEXTS][INPUT_MAX_PLAYERS];
 	void (*callback_quit)();
 	void (*callback_resized)(int width, int height);
 	void (*callback_toggle_fullscreen)();
@@ -206,5 +208,5 @@ int input_player_prefer_controller_save_configuration();
 #endif
 int input_init();
 const char *input_event_get_name(SDL_Event *event);
-void input_player_input_get_new_mapping_event(int player, int input_idx, int alt, Uint32 timeout);
+void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout);
 #endif //INPUT_H
