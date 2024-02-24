@@ -707,7 +707,6 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								ri->data.pointing_device.y = ie->data.pointing_device_move.y;
 								
 								ie->input_id = ri->id;
-								*have_ie = 0;
 								return;
 								break;
 							// can't be remapped
