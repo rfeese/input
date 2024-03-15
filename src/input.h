@@ -143,22 +143,38 @@ typedef struct s_input_event {
 
 
 #define INPUT_MAX_PLAYERS	4
-#define INPUT_MAX_PLAYER_CONTEXTS	4
+#define INPUT_MAX_PLAYER_CONTEXTS	8
 #define	INPUT_MAX_JOYSTICKS	8
-#define INPUT_MAX_JOYSTICK_AXES	2
+#define INPUT_MAX_JOYSTICK_AXES	4
+#define INPUT_MAX_DEVICES	255
+#define INPUT_DEFAULT_AXIS_DEADZONE	8000
 
+typedef struct s_input_joy {
+	SDL_Joystick *joystick;
+	Sint16 axis_center[INPUT_MAX_JOYSTICK_AXES];
+	Uint16 axis_deadzone[INPUT_MAX_JOYSTICK_AXES];
+} t_input_joy;
+
+typedef struct s_input_gc {
+	SDL_GameController *gamecontroller;
+	Uint16 axis_deadzone[INPUT_MAX_JOYSTICK_AXES];
+	int instance_id;
+} t_input_gc;
+
+// joystick_id/instance id: the identifier assigned to the joystick by SDL. Increments each time a joystick is plugged in.
+// joystick_index/device index: the OS joystick device number. Can change -- if devices are unplugged, others are re-indexed.
+// joystick_index can't really be used for identification later as it can change.
 typedef struct s_input_data {
-	Uint32 num_joysticks;
-	SDL_Joystick *joystick[INPUT_MAX_JOYSTICKS]; // joysticks by device index
-	SDL_JoystickID joystick_id[INPUT_MAX_JOYSTICKS]; // mapping of device index to instance_id instance id is used in events
-	Sint16 joy_axis_center[INPUT_MAX_JOYSTICKS][INPUT_MAX_JOYSTICK_AXES]; // joytick axis centers, by instance
-	Sint16 joy_axis_threshold; // TODO: make this adustable per stick
+	Uint32 num_joys;
+	t_input_joy joy[INPUT_MAX_JOYSTICKS]; // joysticks tracked by this module
+	Uint16 jid2idx[INPUT_MAX_DEVICES];
 
-	Uint32 num_gamecontrollers;
-	SDL_GameController *gamecontroller[INPUT_MAX_JOYSTICKS]; // controllers by device index
-	Sint16 gamecontroller_axis_center[INPUT_MAX_JOYSTICKS][SDL_CONTROLLER_AXIS_MAX]; // controller axis centers, by instance
-	char gamecontroller_name[INPUT_MAX_JOYSTICKS][32]; // names by device index
-	Sint32 player_use_controller[INPUT_MAX_PLAYERS]; // controller device index assigned to players
+	Uint32 num_gcs;
+	t_input_gc gc[INPUT_MAX_JOYSTICKS]; // controllers tracked by this module
+	Uint16 gcid2idx[INPUT_MAX_DEVICES];
+
+	Sint32 player_use_controller[INPUT_MAX_PLAYERS]; // gc array index assigned to players
+
 	char player_prefer_controller[INPUT_MAX_PLAYERS][33]; // which joystick guid a player prefers -- SDL joy GUID str 33 chars
 
 	Uint32 last_id;
@@ -200,12 +216,10 @@ typedef void (*input_handler)(SDL_Event *re, t_input_event *ie, int *have_re, in
 int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_input_context *ic[], input_handler ih[]);
 
 int input_load_gamecontrollerdb();
-#ifdef USE_CONFIGURATION
 int input_context_load_configuration(t_input_context *ic, int translate_gc_which);
 int input_context_save_configuration(t_input_context *ic);
 int input_player_prefer_controller_load_configuration();
 int input_player_prefer_controller_save_configuration();
-#endif
 int input_init();
 const char *input_event_get_name(SDL_Event *event);
 void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout);

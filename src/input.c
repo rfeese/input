@@ -4,22 +4,21 @@
 #include <stdlib.h>
 #include "input.h"
 #ifdef USE_CONFIGURATION
-#include <configuration.h>
+#include "configuration.h"
 #endif
 #define ABS(val)    (((val) < 0) ? (0 - (val)) : (val))
 
 t_input_data input = {
-	.num_joysticks = 0,
-	.joystick = { },
-	.joystick_id = { -1, -1, -1, -1, -1, -1, -1, -1 }, // remember the joystick instance_id for joysticks
-	.joy_axis_center = { { 0 } },
-	.joy_axis_threshold = 16384,
+	.num_joys = 0,
+	.joy = { },
+	.jid2idx = { },
 
-	.num_gamecontrollers = 0,
-	.gamecontroller = { },
-	.gamecontroller_axis_center = { { 0 } },
-	.gamecontroller_name = { { '\0' } },
+	.num_gcs = 0,
+	.gc = { },
+	.gcid2idx = { },
+
 	.player_use_controller = { -1, -1, -1, -1 }, // index of controller assigned to players
+
 	.player_prefer_controller = {}, // remember which joystick guid a player prefers SDL joy GUID str 33 chars
 
 	.last_id = 0,
@@ -38,7 +37,7 @@ t_input_data input = {
 
 
 //---------------------------------------------------------------------------
-Uint32 input_get_id(){
+int input_get_id(){
 	return ++input.last_id;
 }
 //---------------------------------------------------------------------------
@@ -419,8 +418,8 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 		case SDL_JOYAXISMOTION:
 			// compare to mapping to determine if the state is activated:
 			// if same sign (relative to center) and past threshold
-			if((((re->jaxis.value - input.joy_axis_center[re->jaxis.which][re->jaxis.axis]) < 0) == (mapping->event.jaxis.value < 0)) \
-					&& (ABS(re->jaxis.value - input.joy_axis_center[re->jaxis.which][re->jaxis.axis]) > input.joy_axis_threshold)){
+			if((((re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) < 0) == (mapping->event.jaxis.value < 0)) \
+					&& (ABS(re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) > input.joy[input.jid2idx[re->jaxis.which]].axis_deadzone[re->jaxis.axis])){
 				re_state = 1;
 			}
 			break;
@@ -428,8 +427,8 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 		case SDL_CONTROLLERAXISMOTION:
 			// compare to mapping to determine if the state is activated:
 			// if same sign (relative to center) and past threshold
-			if((((re->caxis.value - input.gamecontroller_axis_center[re->caxis.which][re->caxis.axis]) < 0) == (mapping->event.caxis.value < 0)) \
-					&& (ABS(re->caxis.value - input.gamecontroller_axis_center[re->caxis.which][re->caxis.axis]) > input.joy_axis_threshold)){
+			if(((re->caxis.value < 0) == (mapping->event.caxis.value < 0)) \
+					&& (ABS(re->caxis.value) > input.gc[input.gcid2idx[re->caxis.which]].axis_deadzone[re->caxis.axis])){
 				re_state = 1;
 			}
 			break;
@@ -789,96 +788,74 @@ void input_context_apply_input_event(t_input_context *ic, t_input_event *ie){
 	}
 }
 //---------------------------------------------------------------------------
-void add_joystick(Uint16 joy_idx){
+void add_joystick(int device_index){
 
-        if(joy_idx >= INPUT_MAX_JOYSTICKS){
-                input.num_joysticks = INPUT_MAX_JOYSTICKS;
-                printf("Too many joysticks. Unable to add joystick %d.\n", joy_idx);
+        SDL_Joystick *joy = SDL_JoystickOpen(device_index);
+	if(!joy){
+                printf("ERROR: Unable to open joystick.\n");
+		return;
+	}
+
+	// try to add joystick to our array
+	int i = 0;
+	while(i < INPUT_MAX_JOYSTICKS && input.joy[i].joystick){
+		if(input.joy[i].joystick == joy){
+                        printf("ERROR: Joystick already added.\n");
+			return;
+		}
+		i++;
+	}
+	if(i >= INPUT_MAX_JOYSTICKS){
+                printf("ERROR: Too many joysticks. Unable to add joystick %d.\n", device_index);
                 return;
         }
 
-        //joystick already added
-        if(input.joystick[joy_idx]){
-                // if(main_settings.debug){
-                        printf("Joystick %d already added.\n", joy_idx);
-                // }
-                return;
-        }
+	input.joy[i].joystick = joy;
+	// printf("Joystick Name: %s.\n", SDL_JoystickName(joy));
+
+	input.num_joys++;
 
         //joystick setup
-        input.joystick[joy_idx] = SDL_JoystickOpen(joy_idx);
-        if(!input.joystick[joy_idx]){
-                printf("Unable to add joystick %d.\n", joy_idx);
-                return;
-        }
-
-        // if(main_settings.debug > 1){
-                char guidstr[4096];
-                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(joy_idx), guidstr, sizeof(guidstr));
-                // printf("Joystick %d GUID: %s.\n", joy_idx, guidstr);
-                // printf("Joystick %d Name: %s.\n", joy_idx, SDL_JoystickName(input.joystick[joy_idx]));
-                // printf("Joystick %d instance id: %d.\n", joy_idx, SDL_JoystickInstanceID(input.joystick[joy_idx]));
-        // }
-
-        input.joystick_id[joy_idx] = SDL_JoystickInstanceID(input.joystick[joy_idx]);
-
-	input.num_joysticks ++;
-
         //find axis centers
         int num_joy_axes = 0; //number of axis for joystick;
-        num_joy_axes = SDL_JoystickNumAxes(input.joystick[joy_idx]);
+        num_joy_axes = SDL_JoystickNumAxes(joy);
         if(num_joy_axes > INPUT_MAX_JOYSTICK_AXES){
                 num_joy_axes = INPUT_MAX_JOYSTICK_AXES;
         }
 
-        int axis_idx = 0;
-        for(axis_idx = 0; axis_idx < num_joy_axes; axis_idx++){
-                // input.joy_axis_center[joy_idx][axis_idx] = SDL_JoystickGetAxis(input.joystick[joy_idx], axis_idx);
-		// start with 0
-		// TODO: update based on observed values?
-                input.joy_axis_center[input.joystick_id[joy_idx]][axis_idx] = 0;
+        for(int axis = 0; axis < num_joy_axes; axis++){
+		// center based on observed value
+                input.joy[i].axis_center[axis] = SDL_JoystickGetAxis(joy, axis);
+		input.joy[i].axis_deadzone[axis] = INPUT_DEFAULT_AXIS_DEADZONE;
         }
 
-        //init joystick
-        // if(main_settings.debug){
-        //        printf("Joystick %d initialized.\n", joy_idx);
-        // }
-
-        //TODO: do controller stuff??
-        if(SDL_IsGameController(joy_idx)){
-        }
+	// set up the instance map
+	input.jid2idx[SDL_JoystickGetDeviceInstanceID(device_index)] = i;
 }
 //---------------------------------------------------------------------------
-void remove_joystick(Uint16 joy_id){
-        int joy_idx;
-        for(joy_idx = 0; joy_idx < INPUT_MAX_JOYSTICKS && (input.joystick_id[joy_idx] != joy_id); joy_idx++){
-        }
+void remove_joystick(int instance_id){
+	SDL_Joystick *joy = SDL_JoystickFromInstanceID((SDL_JoystickID)instance_id);
+	if(!joy){
+                printf("ERROR: removed joystick not found.\n");
+		return;
+	}
 
-        if(joy_idx >= INPUT_MAX_JOYSTICKS){
-                // if(main_settings.debug){
-                        printf("ERROR: Unable to find joystick for joystick instance id %d.\n", joy_id);
-                // }
-                return;
-        }
-
-        if(!input.joystick[joy_idx]){
-                // if(main_settings.debug){
-                        printf("ERROR: Can't remove non-existant joystick %d.\n", joy_idx);
-                // }
-                return;
-        }
-
-        //do associated controller stuff??
+	int i = 0;
+	while(i < INPUT_MAX_JOYSTICKS && input.joy[i].joystick && input.joy[i].joystick != joy){
+		i++;
+	}
+	
+	if((i >= INPUT_MAX_JOYSTICKS) || input.joy[i].joystick != joy){
+                printf("ERROR: removed joystick not found.\n");
+		return;
+	}
 
         //unregister joystick
-        SDL_JoystickClose(input.joystick[joy_idx]);
-        input.joystick[joy_idx] = NULL;
-        input.joystick_id[joy_idx] = -1;
-	input.num_joysticks -= 1;
-
-        // if(main_settings.debug){
-        //        printf("Joystick %d removed.\n", joy_idx);
-        // }
+        SDL_JoystickClose(input.joy[i].joystick);
+        input.joy[i].joystick = NULL;
+	input.num_joys--;
+	// update the instance map
+	input.jid2idx[instance_id] = 0;
 }
 //---------------------------------------------------------------------------
 void input_context_apply_controller_mappings_for_controller(t_input_context *ic, SDL_JoystickID joystick_id){
@@ -936,35 +913,31 @@ void input_context_remove_controller_mappings_for_controller(t_input_context *ic
         }
 }
 //---------------------------------------------------------------------------
-void unassign_controller_to_player(int player, int controller_idx){
-	if(input.player_use_controller[player] == controller_idx){
+void unassign_controller_to_player(int player, int i){
+	if(input.player_use_controller[player] == i){
 		input.player_use_controller[player] = -1;
-		SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[controller_idx]));
-		for(int i = 0; i < INPUT_MAX_PLAYER_CONTEXTS; i++){
-			if(input.player_context[i][player]){
-				input_context_remove_controller_mappings_for_controller(input.player_context[i][player], joystick_id);
+		for(int c = 0; c < INPUT_MAX_PLAYER_CONTEXTS; c++){
+			if(input.player_context[c][player]){
+				input_context_remove_controller_mappings_for_controller(input.player_context[c][player], input.gc[i].instance_id);
 			}
 		}
 	}
 }
 //---------------------------------------------------------------------------
-void assign_controller_to_player(int player, int controller_idx){
+void assign_controller_to_player(int player, int i){
 	// make sure controller is unassigned from other players
 	for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
 		if(p != player){
-			unassign_controller_to_player(p, controller_idx);
+			unassign_controller_to_player(p, i);
 		}
 	}
 
-	input.player_use_controller[player] = controller_idx;
+	input.player_use_controller[player] = i;
 	// apply default controller mappings
-	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[controller_idx]));
-	for(int i = 0; i < INPUT_MAX_PLAYER_CONTEXTS; i++){
-		if(input.player_context[i][player]){
-			input_context_apply_controller_mappings_for_controller(input.player_context[i][player], joystick_id);
-#ifdef USE_CONFIGURATION
-			input_context_load_configuration(input.player_context[i][player], joystick_id);
-#endif
+	for(int c = 0; c < INPUT_MAX_PLAYER_CONTEXTS; c++){
+		if(input.player_context[c][player]){
+			input_context_apply_controller_mappings_for_controller(input.player_context[c][player], input.gc[i].instance_id);
+			input_context_load_configuration(input.player_context[c][player], input.gc[i].instance_id);
 		}
 	}
 }
@@ -973,138 +946,114 @@ void assign_controller_to_player(int player, int controller_idx){
  * Add game controller with controller/joystick device index
  * Returns the affected player
  */
-int add_gamecontroller(Uint16 joystick_index){
-        if(joystick_index >= INPUT_MAX_JOYSTICKS){
-                printf("ERROR: Too many game controllers. Can't add controller %d\n", joystick_index);
-                return -1;
-        }
+int add_gamecontroller(int device_index){
+	// printf("addding gamecontroller joystick_index %d\n", device_index);
 
-        if(joystick_index >= INPUT_MAX_JOYSTICKS){
-		// if(main_settings.debug){
-			printf("ERROR: Too many game controllers.\n");
-		// }
-                return -1;
-        }
-
-	input.gamecontroller[joystick_index] = SDL_GameControllerOpen(joystick_index);
-	if(!input.gamecontroller[joystick_index]){
-		// if(main_settings.debug){
-			printf("ERROR: Unable to open game controller %d.\n", joystick_index);
-		// }
+	SDL_GameController *gc = SDL_GameControllerOpen(device_index);
+	if(!gc){
+		printf("ERROR: Unable to open game controller for device_index %d.\n", device_index);
 		return -1;
 	}
-	input.num_gamecontrollers++;
 
-	// if(main_settings.debug > 1){
-	//	printf("Game Controller %d identified as %s.\n", joystick_index, SDL_GameControllerName(input.gamecontroller[joystick_index]));
-	//	printf("Game Controller %d has joystick instance id %d.\n", joystick_index, SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[joystick_index])));
-	// }
+	// try to add gc to our array
+	int i = 0;
+	while(i < INPUT_MAX_JOYSTICKS && input.gc[i].gamecontroller){
+		if(input.gc[i].gamecontroller == gc){
+                        printf("ERROR: game controller already added.\n");
+			return -1;
+		}
+		i++;
+	}
+	if(i >= INPUT_MAX_JOYSTICKS){
+                printf("ERROR: Too many gamecontrollers. Unable to add  %d.\n", device_index);
+                return -1;
+        }
 
-	//save the gamecontroller name
-	strncpy(input.gamecontroller_name[joystick_index], SDL_GameControllerName(input.gamecontroller[joystick_index]), 16);
+	input.num_gcs++;
+	input.gc[i].gamecontroller = gc;
+	SDL_JoystickID instance_id = SDL_JoystickGetDeviceInstanceID(device_index);
+	input.gc[i].instance_id = instance_id;
+	// printf("Game Controller name: %s.\n", SDL_GameControllerName(gc));
 
-	SDL_JoystickID joystick_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[joystick_index]));
-	//find axis centers and associate with instance id
-	/*
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTX] = SDL_GameControllerGetAxis(input.gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTX);
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTY] = SDL_GameControllerGetAxis(input.gamecontroller[i], SDL_CONTROLLER_AXIS_LEFTY);
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTX] = SDL_GameControllerGetAxis(input.gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTX);
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTY] = SDL_GameControllerGetAxis(input.gamecontroller[i], SDL_CONTROLLER_AXIS_RIGHTY);
-	*/
-	// start with 0
-	// TODO: update based on observed values?
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTX]  = 0;
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_LEFTY]  = 0;
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTX] = 0;
-	input.gamecontroller_axis_center[joystick_id][SDL_CONTROLLER_AXIS_RIGHTY] = 0;
+	// defaults for gc
+	input.gc[i].axis_deadzone[0] = INPUT_DEFAULT_AXIS_DEADZONE;
+	input.gc[i].axis_deadzone[1] = INPUT_DEFAULT_AXIS_DEADZONE;
+	input.gc[i].axis_deadzone[2] = INPUT_DEFAULT_AXIS_DEADZONE;
+	input.gc[i].axis_deadzone[3] = INPUT_DEFAULT_AXIS_DEADZONE;
 
+	// set up the instance map
+	input.gcid2idx[instance_id] = i;
 
-	// if(main_settings.debug){
-	//	printf("Game Controller %d initialized.\n", joystick_index);
-	// }
+	// Auto-assign to a player	
+	// TODO: use SDL_GameControllerGetPlayerIndex (xinput user index) if possible
 
-	// TODO: First use SDL_GameControllerGetPlayerIndex (xinput user index) if possible
-
-	int pidx = 0;
 	// assign preferred joy guids to players
 	char guid_str[33];
-	SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(input.gamecontroller[joystick_index])), guid_str, 33);
-	while((strncmp(input.player_prefer_controller[pidx], guid_str, 33) != 0) && (pidx < INPUT_MAX_PLAYERS)){
-		pidx++;
+	SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(SDL_GameControllerGetJoystick(gc)), guid_str, 33);
+	int p = 0;
+	while((strncmp(input.player_prefer_controller[p], guid_str, 33) != 0) && (p < INPUT_MAX_PLAYERS)){
+		p++;
 	}
-	if(pidx >= INPUT_MAX_PLAYERS){ // no prefs found 
+	if(p >= INPUT_MAX_PLAYERS){ // no prefs found 
 		// assign to first player that does not have a controller
-		pidx = 0;
-		while((input.player_use_controller[pidx] >= 0) && (pidx < INPUT_MAX_PLAYERS)){
-			pidx++;
+		p = 0;
+		while((input.player_use_controller[p] >= 0) && (p < INPUT_MAX_PLAYERS)){
+			p++;
 		}
 	}
-	if(pidx < INPUT_MAX_PLAYERS){
-		assign_controller_to_player(pidx, joystick_index);
-		// if(main_settings.debug){
-		//	printf("Game Controller %d assigned to player %d.\n", joystick_index, pidx);
-		// }
-		return pidx;
+	if(p < INPUT_MAX_PLAYERS){
+		assign_controller_to_player(p, i);
+		// printf("Game Controller %d assigned to player %d.\n", instance_id, p);
+		return p;
 	}
-	else{
-		// if(main_settings.debug){
-			printf("ERROR: Game Controller %d not assigned.\n", joystick_index);
-		// }
-		return -1;
-	}
+
+	// printf("Game Controller not assigned.\n");
 	return -1;
 }
 //---------------------------------------------------------------------------
 /** 
- * Remove controller identified by joystick instance_id / JoystickID
+ * Remove controller identified by instance_id / JoystickID
  * If player was affected, return player idx
  */
-int remove_gamecontroller(Uint32 joystick_id){
+int remove_gamecontroller(int instance_id){
 
-	int retval = -1;
+	// printf("removing gamecontroller instance_id %d\n", instance_id);
 
-        // figure out which controller corresponds to the device id
-	SDL_GameController *controller = SDL_GameControllerFromInstanceID(joystick_id);
-        int controller_idx;
-        for(controller_idx = 0; controller_idx < INPUT_MAX_JOYSTICKS && (input.gamecontroller[controller_idx] != controller); controller_idx++){
+        // figure out which controller corresponds to the device/instance id
+        int i;
+        for(i = 0; i < INPUT_MAX_JOYSTICKS && (input.gc[i].instance_id != instance_id); i++){
         }
-        if(controller_idx >= INPUT_MAX_JOYSTICKS){
-                // if(main_settings.debug){
-                        printf("ERROR: Unable to find controller for joystick instance id %d.\n", joystick_id);
-                // }
-                return retval;
+        if(i >= INPUT_MAX_JOYSTICKS){
+		printf("ERROR: Unable to find controller instance id %d.\n", instance_id);
+                return -1;
         }
 
-        if(!input.gamecontroller[controller_idx]){
-                // if(main_settings.debug){
-                        printf("ERROR: Can't remove non-existant controller %d.\n", controller_idx);
-                // }
-                return retval;
+        if(!input.gc[i].gamecontroller){
+		printf("ERROR: Can't remove non-existant controller %d.\n", instance_id);
+                return -1;
         }
 
 	// update player controls
-        int player_idx;
-        for(player_idx = 0; player_idx < INPUT_MAX_PLAYERS; player_idx++){
-                if(input.player_use_controller[player_idx] == controller_idx){
-			unassign_controller_to_player(player_idx, controller_idx);
-                        // if(main_settings.debug){
-                        //        printf("Game Controller %d unassigned from player %d.\n", controller_idx, player_idx);
-                        // }
-
-                        // send player index affected
-			retval = player_idx;
+        int p;
+        for(p = 0; p < INPUT_MAX_PLAYERS; p++){
+                if(input.player_use_controller[p] == i){
+			unassign_controller_to_player(p, i);
+			// printf("Game Controller unassigned from player %d.\n", p);
                 }
         }
 
         //remove the controller
-        SDL_GameControllerClose(input.gamecontroller[controller_idx]);
-        input.gamecontroller[controller_idx] = NULL;
-	input.num_gamecontrollers--;
+        SDL_GameControllerClose(input.gc[i].gamecontroller);
+        input.gc[i].gamecontroller = NULL;
+	input.gc[i].instance_id = -1;
+	input.num_gcs--;
+	// update the instance map
+	input.gcid2idx[instance_id] = 0;
 
-        // if(main_settings.debug){
-        //        printf("Game Controller %d removed.\n", controller_idx);
-        // }
-	return retval;
+	// printf("Game Controller removed.\n");
+
+	// send player index affected
+	return p;
 }
 //---------------------------------------------------------------------------
 int input_check_for_repeat(t_input *input, t_input_event *ie, int *have_ie){
@@ -1357,12 +1306,12 @@ int input_load_gamecontrollerdb(){
 	return 0;
 }
 //---------------------------------------------------------------------------
-#ifdef USE_CONFIGURATION
 /** 
  * Load input config and add any matches to the context
  * Translate any controller which
  */
 int input_context_load_configuration(t_input_context *ic, int translate_gc_which){
+#ifdef USE_CONFIGURATION
 	if(!configuration_load()){
 		return 0;
 	}
@@ -1550,9 +1499,13 @@ int input_context_load_configuration(t_input_context *ic, int translate_gc_which
 		}
 	}
 	return 1;
+#else // USE_CONFIGURATION
+	return 0;
+#endif
 }
 //---------------------------------------------------------------------------
 int input_context_save_configuration(t_input_context *ic){
+#ifdef USE_CONFIGURATION
 	char configstr[32];
 
 	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
@@ -1630,9 +1583,13 @@ int input_context_save_configuration(t_input_context *ic){
 
 	return configuration_save();
 	return 1;
+#else // USE_CONFIGURATION
+	return 0;
+#endif
 }
 //---------------------------------------------------------------------------
 int input_player_prefer_controller_load_configuration(){
+#ifdef USE_CONFIGURATION
 	if(!configuration_load()){
 		return 0;
 	}
@@ -1651,9 +1608,13 @@ int input_player_prefer_controller_load_configuration(){
 		}
 	}
 	return 1;
+#else // USE_CONFIGURATION
+	return 0;
+#endif
 }
 //---------------------------------------------------------------------------
 int input_player_prefer_controller_save_configuration(){
+#ifdef USE_CONFIGURATION
 	char configstr[32] = {};
 
 	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
@@ -1671,12 +1632,14 @@ int input_player_prefer_controller_save_configuration(){
 	}
 	return configuration_save();
 	return 1;
-}
+#else // USE_CONFIGURATION
+	return 0;
 #endif
+}
 //---------------------------------------------------------------------------
 int input_init(){
-	input.num_joysticks = 0;
-	input.num_gamecontrollers = 0;
+	input.num_joys = 0;
+	input.num_gcs = 0;
 	return 1;
 }
 //---------------------------------------------------------------------------
@@ -1853,8 +1816,13 @@ void input_player_input_get_new_mapping_event(int player, t_input_context *ic_pl
 				}
 
 				// if a controller event, does the which match the assigned controller?
-				if((re.type == SDL_CONTROLLERBUTTONDOWN) || (re.type == SDL_CONTROLLERBUTTONUP) || (re.type == SDL_CONTROLLERAXISMOTION)){
-					int instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(input.gamecontroller[input.player_use_controller[player]]));
+				if(input.player_use_controller[player] >= 0 && ( \
+						(re.type == SDL_CONTROLLERBUTTONDOWN) \
+						|| (re.type == SDL_CONTROLLERBUTTONUP) 
+						|| (re.type == SDL_CONTROLLERAXISMOTION))){
+					
+					int instance_id = input.gc[input.player_use_controller[player]].instance_id;
+
 					switch(re.type){
 						case SDL_CONTROLLERBUTTONUP:
 						case SDL_CONTROLLERBUTTONDOWN:
