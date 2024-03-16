@@ -841,7 +841,7 @@ void remove_joystick(int instance_id){
 	}
 
 	int i = 0;
-	while(i < INPUT_MAX_JOYSTICKS && input.joy[i].joystick && input.joy[i].joystick != joy){
+	while(i < INPUT_MAX_JOYSTICKS && input.joy[i].joystick != joy){
 		i++;
 	}
 	
@@ -925,6 +925,16 @@ void unassign_controller_to_player(int player, int i){
 }
 //---------------------------------------------------------------------------
 void assign_controller_to_player(int player, int i){
+	// if there is an existing controller assigned, remove mappings.
+	if(input.player_use_controller[player] >= 0){
+		for(int c = 0; c < INPUT_MAX_PLAYER_CONTEXTS; c++){
+			if(input.player_context[c][player]){
+				input_context_remove_controller_mappings_for_controller(input.player_context[c][player], \
+						input.gc[input.player_use_controller[player]].instance_id);
+			}
+		}
+	}
+	 
 	// make sure controller is unassigned from other players
 	for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
 		if(p != player){
@@ -1635,6 +1645,7 @@ int input_player_prefer_controller_save_configuration(){
 #else // USE_CONFIGURATION
 	return 0;
 #endif
+
 }
 //---------------------------------------------------------------------------
 int input_init(){

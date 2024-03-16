@@ -1067,6 +1067,8 @@ void test_input_responds_to_device_added(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_joys, "num_joys should be 1.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.jid2idx[4], "jid2idx should map instance 4 to joy 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(&my_joysticks[0], input.joy[0].joystick, "joy 0 joystick should be my_joysticks[0].");
 
 	input.gcid2idx[4] = 123;
 	input.gc[0].gamecontroller = NULL;
@@ -1077,7 +1079,7 @@ void test_input_responds_to_device_added(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_gcs, "num_gcs should be 1.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.gcid2idx[4], "gcid2idx should map instance 4 to gc 0.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(&my_gamecontrollers[0], input.gc[0].gamecontroller, "gc 0 gamecontroller should be my_gamecontroller[0].");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(&my_gamecontrollers[0], input.gc[0].gamecontroller, "gc 0 gamecontroller should be my_gamecontrollers[0].");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(4, input.gc[0].instance_id, "gc 0 instance_id should be 4.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.player_use_controller[0], "gc index 0 should be assigned to player 0.");
 
@@ -1099,7 +1101,8 @@ void test_input_responds_to_device_removed(){
 	int jdevice_id = my_joysticks[0].id;
 	testevents[0].type = SDL_JOYDEVICEREMOVED;
 	testevents[0].jdevice.which = jdevice_id; // which is instance id in remove event
-	input.joy[jdevice_idx].joystick = SDL_JoystickOpen(jdevice_idx);
+	input.joy[0].joystick = SDL_JoystickOpen(jdevice_idx);
+	input.jid2idx[jdevice_id] = 123;
 	input.num_joys = 1;
 
 	// from my_controllers
@@ -1107,6 +1110,7 @@ void test_input_responds_to_device_removed(){
 	testevents[1].type = SDL_CONTROLLERDEVICEREMOVED;
 	testevents[1].cdevice.which = cdevice_id; // which is instance id in remove event
 	input.num_gcs = 1;
+	input.gcid2idx[cdevice_id] = 456;
 	input.player_use_controller[0] = 0; // gc index
 	input.gc[0].gamecontroller = &my_gamecontrollers[0];
 	input.gc[0].instance_id = cdevice_id;
@@ -1137,10 +1141,12 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_joys, "num_joys should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.jid2idx[jdevice_id], "jid2idx should be reset.");
 
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gcs, "num_gcs should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.gcid2idx[cdevice_id], "gcid2idx should be reset.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(-1, input.player_use_controller[0], "controller 0 should be unassigned from player 0.");
 	
 	// check for notification of controller assigned to player disconnected
