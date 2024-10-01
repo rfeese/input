@@ -1086,8 +1086,14 @@ void test_input_responds_to_device_added(){
 	input.gc[0].gamecontroller = NULL;
 	input.gc[0].instance_id = 456;
 	input.player_use_controller[0] = -1;
+	ie.type = IE_NONE;
+	ie.data.controller_connect.player = 8;
+	ie.data.controller_connect.device_index = 8;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gcs, "Initial num_gcs should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_CONNECT, ie.type, "Event type should have been IE_CONTROLLER_CONNECT.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(device_idx, ie.data.controller_connect.device_index, "IE_CONTROLLER_CONNECT event should have set device_index.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ie.data.controller_connect.player, "IE_CONTROLLER_CONNECT event should have set player.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input.num_gcs, "num_gcs should be 1.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.gcid2idx[4], "gcid2idx should map instance 4 to gc 0.");
@@ -1155,6 +1161,9 @@ void test_input_responds_to_device_removed(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_joys, "num_joys should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.jid2idx[jdevice_id], "jid2idx should be reset.");
 
+	ie.type = IE_NONE;
+	ie.data.controller_connect.player = 8;
+	ie.data.controller_connect.device_index = 8;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gcs, "num_gcs should be 0.");
@@ -1164,6 +1173,7 @@ void test_input_responds_to_device_removed(){
 	// check for notification of controller assigned to player disconnected
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have an event from controller disconnected.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(IE_CONTROLLER_DISCONNECT, ie.type, "Should have received controller disconnected event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ie.data.controller_connect.player, "Controller disconnected event should have set player.");
 
 	// check that controller mappings have been removed from player context
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, context_player[0].mapping[0][0].active, "controller mapping should be removed.");

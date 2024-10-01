@@ -130,6 +130,11 @@ typedef struct s_ie_pointing_device_move {
 	Sint32 y;
 } t_ie_pointing_device_move;
 
+typedef struct s_ie_controller_connect {
+	int player;
+	Sint32 device_index;
+} t_ie_controller_connect;
+
 typedef struct s_input_event {
 	Uint32 input_id;
 	t_input_event_type type;
@@ -138,6 +143,7 @@ typedef struct s_input_event {
 		t_ie_button button;
 		t_ie_pointing_device_button pointing_device_button;
 		t_ie_pointing_device_move pointing_device_move;
+		t_ie_controller_connect controller_connect;
 	} data;
 } t_input_event;
 

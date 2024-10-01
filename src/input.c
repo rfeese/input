@@ -1044,11 +1044,11 @@ int remove_gamecontroller(int instance_id){
 
 	// update player controls
         int p;
-        for(p = 0; p < INPUT_MAX_PLAYERS; p++){
-                if(input.player_use_controller[p] == i){
-			unassign_controller_to_player(p, i);
-			// printf("Game Controller unassigned from player %d.\n", p);
-                }
+	for(p = 0; p < INPUT_MAX_PLAYERS && input.player_use_controller[p] != i; p++){
+	}
+	if(p < INPUT_MAX_PLAYERS){
+		unassign_controller_to_player(p, i);
+		// printf("Game Controller unassigned from player %d.\n", p);
         }
 
         //remove the controller
@@ -1062,7 +1062,12 @@ int remove_gamecontroller(int instance_id){
 	// printf("Game Controller removed.\n");
 
 	// send player index affected
-	return p;
+	if(p < INPUT_MAX_PLAYERS){
+		return p;
+	}
+	else{
+		return -1;
+	}
 }
 //---------------------------------------------------------------------------
 int input_check_for_repeat(t_input *input, t_input_event *ie, int *have_ie){
@@ -1172,16 +1177,21 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		}
 		if(re->type == SDL_CONTROLLERDEVICEADDED){
 			*have_re = 0;
-			if(add_gamecontroller(re->cdevice.which) >= 0){ // which is device index
+			int player = -1;
+			if((player = add_gamecontroller(re->cdevice.which)) >= 0){ // which is device index
 				*have_ie = 1;
 				ie->type = IE_CONTROLLER_CONNECT;
+				ie->data.controller_connect.player = player;
+				ie->data.controller_connect.device_index = re->cdevice.which;
 			}
 		}
 		if(re->type == SDL_CONTROLLERDEVICEREMOVED){
 			*have_re = 0;
-			if(remove_gamecontroller(re->cdevice.which) >= 0){ // which is instance id
+			int player = -1;
+			if((player = remove_gamecontroller(re->cdevice.which)) >= 0){ // which is instance id
 				*have_ie = 1;
 				ie->type = IE_CONTROLLER_DISCONNECT;
+				ie->data.controller_connect.player = player;
 			}
 		}
 
