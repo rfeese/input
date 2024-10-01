@@ -145,9 +145,8 @@ int mapping_matches_raw_event(t_raw_mapping *m, const SDL_Event *e){
 			if((e->type != SDL_KEYDOWN) && (e->type != SDL_KEYUP)){
 				return 0;
 			}
-			// keymod is a bitmask, only apply if mapping keymod is not KMOD_NONE (0)
-			// only check to see if the specified keymod bitmask is satisfied
-			if((m->event.key.keysym.mod) && !(e->key.keysym.mod & m->event.key.keysym.mod)){
+			// check to see if keymod bitmask matches
+			if(e->key.keysym.mod != m->event.key.keysym.mod){
 				return 0;
 			}
 			if(m->event.key.keysym.sym == e->key.keysym.sym){

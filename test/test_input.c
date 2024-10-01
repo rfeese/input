@@ -523,6 +523,18 @@ void test_input_context_add_raw_mapping_at(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic.mapping[idx][0].active, "Mapping at alt 0 should be active.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_KEYDOWN, ic.mapping[idx][0].event.type, "Mapping at alt 0 event type should be set.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_b, ic.mapping[idx][0].event.key.keysym.sym, "New Mapping at alt 0 event data should be set.");
+
+	// new event is similar except different KMOD
+	SDL_Event e3 = { .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_b, .key.keysym.mod = KMOD_LCTRL };
+	input_context_add_raw_mapping_at(&ic, &e3, idx, -1, 0);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic.mapping[idx][1].active, "Mapping at alt 1 should be active.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_KEYDOWN, ic.mapping[idx][1].event.type, "Mapping at alt 1 event type should be set.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_b, ic.mapping[idx][1].event.key.keysym.sym, "Mapping at alt 1 event data should be set.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(KMOD_NONE, ic.mapping[idx][1].event.key.keysym.mod, "Mapping at alt 1 event kmod should be NONE.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic.mapping[idx][0].active, "Mapping at alt 0 should be active.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_KEYDOWN, ic.mapping[idx][0].event.type, "Mapping at alt 0 event type should be set.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(SDLK_b, ic.mapping[idx][0].event.key.keysym.sym, "Mapping at alt 1 event data should be set.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(e3.key.keysym.mod, ic.mapping[idx][0].event.key.keysym.mod, "Mapping at alt 0 event kmod should be CTRL.");
 }
 
 void test_input_context_add_raw_mapping(){
@@ -713,7 +725,7 @@ void test_input_poll(){
 	ec.mapping[0][0].active = 1;
 	ec.mapping[0][0].event.type = SDL_KEYDOWN;
 	ec.mapping[0][0].event.key.keysym.sym = SDLK_b;
-	ec.mapping[0][0].event.key.keysym.mod = KMOD_CTRL;
+	ec.mapping[0][0].event.key.keysym.mod = KMOD_LCTRL;
 
 	// ui context
 	int ui_up = 4;
@@ -760,7 +772,7 @@ void test_input_poll(){
 	// ce_bg
 	testevents[3].type = SDL_KEYDOWN;
 	testevents[3].key.keysym.sym = SDLK_b;
-	testevents[3].key.keysym.mod = KMOD_CTRL;
+	testevents[3].key.keysym.mod = KMOD_LCTRL;
 
 	// p_up 
 	testevents[4].type = SDL_KEYDOWN;

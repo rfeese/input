@@ -25,9 +25,11 @@
 
 enum global_input_ids {
 	I_GLOBAL_NONE = __COUNTER__, // first counter is 0 and that maps to an empty event
-	I_GLOBAL_EXIT = __COUNTER__
+	I_GLOBAL_EXIT = __COUNTER__,
+	I_GLOBAL_FULLSCREEN = __COUNTER__
 };
 int i_global_exit = 1; // may change
+int i_global_fullscreen = 2;
 
 enum ui_input_ids {
 	I_UI_UP = __COUNTER__,
@@ -106,6 +108,9 @@ void ih_global(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie){
 			SDL_Quit();
 			exit(EXIT_SUCCESS);
 		}
+		if(ie->input_id == i_global_fullscreen){
+			printf("Got GLOBAL_FULLSCREEN.\n");
+		}
 	}
 }
 
@@ -142,6 +147,10 @@ int main(int argc, char* argv[]){
 	i_global_exit = input_context_add_input(&ic_global, "global_exit", IT_TRIGGER, -1);
 	input_context_add_raw_mapping(&ic_global, i_global_exit, &(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_ESCAPE, .key.keysym.mod = KMOD_NONE }, 0);
 	printf("i_global_exit got id %d\n", i_global_exit);
+	i_global_fullscreen = input_context_add_input(&ic_global, "global_fullscreen", IT_TRIGGER, -1);
+	input_context_add_raw_mapping(&ic_global, i_global_fullscreen, &(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_f, .key.keysym.mod = KMOD_LALT }, 0);
+	input_context_add_raw_mapping(&ic_global, i_global_fullscreen, &(SDL_Event){ .key.type = SDL_KEYDOWN, .key.keysym.sym = SDLK_f, .key.keysym.mod = KMOD_RALT }, 0);
+	printf("i_global_fullscreen got id %d\n", i_global_fullscreen);
 
 	// player input and default mappings
 	// P_UP
