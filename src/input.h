@@ -173,11 +173,12 @@ typedef struct s_input_gc {
 typedef struct s_input_data {
 	Uint32 num_joys;
 	t_input_joy joy[INPUT_MAX_JOYSTICKS]; // joysticks tracked by this module
-	Uint16 jid2idx[INPUT_MAX_DEVICES];
+	Uint16 jid2idx[INPUT_MAX_DEVICES]; // map joystick_id to our joy array index
+
 
 	Uint32 num_gcs;
 	t_input_gc gc[INPUT_MAX_JOYSTICKS]; // controllers tracked by this module
-	Uint16 gcid2idx[INPUT_MAX_DEVICES];
+	Uint16 gcid2idx[INPUT_MAX_DEVICES]; // map game controller instance_id to our gc array index
 
 	Sint32 player_use_controller[INPUT_MAX_PLAYERS]; // gc array index assigned to players
 
@@ -194,6 +195,7 @@ typedef struct s_input_data {
 	void (*callback_resized)(int width, int height);
 	void (*callback_toggle_fullscreen)();
 	int exit_signal; // universal context exit signal
+	void (*callback_controller_removed)(int player); // callback for when a controller is removed before the device is closed
 } t_input_data;
 
 extern t_input_data input;

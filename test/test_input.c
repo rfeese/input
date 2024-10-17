@@ -264,6 +264,11 @@ void testevents_init(){
 	testevents_index = 0;
 }
 
+int _controller_removed_callback_called = 0;
+void _controller_removed_callback(int player){
+	_controller_removed_callback_called = 1;
+}
+
 
 // runs before each test
 void setUp(void){
@@ -283,6 +288,7 @@ void setUp(void){
 	my_joysticks_idx = 0;
 
 	guid_idx = 0;
+	_controller_removed_callback_called = 0;
 }
 
 //runs after each test
@@ -1143,6 +1149,7 @@ void test_input_responds_to_device_removed(){
 	struct s_input_context context_player[2] = {};
 	input.player_context[0][0] = &context_player[0];
 	input.player_context[0][1] = &context_player[1];
+	input.callback_controller_removed = _controller_removed_callback;
 
 	// controller mappings to be remvoed when controller device is unassigned
 	context_player[0].mapping[0][0].active = 1;
@@ -1165,6 +1172,7 @@ void test_input_responds_to_device_removed(){
 	ie.data.controller_connect.player = 8;
 	ie.data.controller_connect.device_index = 8;
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have successfully called input_poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _controller_removed_callback_called, "Should have called controller_removed callback.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.num_gcs, "num_gcs should be 0.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, input.gcid2idx[cdevice_id], "gcid2idx should be reset.");
