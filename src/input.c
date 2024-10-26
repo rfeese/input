@@ -1674,6 +1674,186 @@ int input_player_prefer_controller_save_configuration(){
 
 }
 //---------------------------------------------------------------------------
+int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str){
+
+	if(!get_int || !get_str){
+		return 0;
+	}
+
+	for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
+		char configstr[33] = {};
+		snprintf(configstr, 33, "p_%d_prefer_controller", p);
+		char str_val[33] = { '\0' };
+		if(get_str(configstr, &str_val[0], 33)){
+			if(strncmp(str_val, "none", 33) != 0){
+				snprintf(input.player_prefer_controller[p], 33, "%s", str_val);
+			}
+			else {
+				snprintf(input.player_prefer_controller[p], 33, "%s", "");
+			}	
+		}
+	}
+
+	SDL_EventType input_type;
+	int input_which;
+	int input_axis;
+	int input_value;
+	char configstrtype[32];
+	char configstrwhich[32];
+	char configstraxis[32];
+	char configstrval[32];
+	SDL_Event re = { };
+
+	for(int pc = 0; pc < INPUT_MAX_PLAYER_CONTEXTS; pc++){
+		for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
+			t_input_context *ic = input.player_context[pc][p];
+			if(!ic){
+				continue;
+			}
+
+			for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
+				if(!ic->input[i].defined){
+					continue;
+				}
+
+				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
+					//generate config key strings from the defined input state
+					snprintf(configstrtype,  32, "%s_%d_type",  ic->input[i].name, a);
+					snprintf(configstrwhich, 32, "%s_%d_which", ic->input[i].name, a);
+					snprintf(configstraxis,  32, "%s_%d_axis",  ic->input[i].name, a);
+					snprintf(configstrval,   32, "%s_%d_value", ic->input[i].name, a);
+
+					int got_valid_config = 0;
+					int input_type_tmp = 0;
+					if(get_int(configstrtype, &input_type_tmp)){
+						input_type = (SDL_EventType) input_type_tmp;
+
+						if(!get_int(configstrval, &input_value)){
+							// TODO: check error
+							// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+							continue;
+						}
+
+						//TODO: suport other input event types
+						switch(input_type){
+							case SDL_KEYDOWN:
+								re.type = SDL_KEYDOWN;
+								re.key.keysym.sym = (SDL_Keycode) input_value;
+								// TODO: support loading mappings with keymods?
+								re.key.keysym.mod = KMOD_NONE;
+								got_valid_config = 1;
+								break;
+
+							case SDL_MOUSEBUTTONDOWN:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_MOUSEBUTTONDOWN;
+								re.button.which = (Uint32) input_which;
+								re.button.button = (Uint8) input_value;
+								got_valid_config = 1;
+								break;
+
+							case SDL_JOYBUTTONDOWN:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_JOYBUTTONDOWN;
+								re.jbutton.which = (SDL_JoystickID) input_which;
+								re.jbutton.button = (Uint8) input_value;
+								got_valid_config = 1;
+								break;
+
+							case SDL_CONTROLLERBUTTONDOWN:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_CONTROLLERBUTTONDOWN;
+								// TODO: handle controller/joystick which dynamically
+								re.cbutton.which = (SDL_JoystickID) input_which;
+								re.cbutton.button = (Uint8) input_value;
+								got_valid_config = 1;
+								break;
+
+							case SDL_JOYAXISMOTION:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								if(!get_int(configstraxis, &input_axis)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_JOYAXISMOTION;
+								// TODO: handle controller/joystick which dynamically
+								re.jaxis.which = (SDL_JoystickID) input_which;
+								re.jaxis.axis = (Uint8) input_axis;
+								re.jaxis.value = (Sint16) input_value;
+								got_valid_config = 1;
+								break;
+
+							case SDL_CONTROLLERAXISMOTION:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								if(!get_int(configstraxis, &input_axis)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_CONTROLLERAXISMOTION;
+								// TODO: handle controller/joystick which dynamically
+								re.caxis.which = (SDL_JoystickID) input_which;
+								re.caxis.axis = (Uint8) input_axis;
+								re.caxis.value = (Sint16) input_value;
+								got_valid_config = 1;
+								break;
+
+							case SDL_JOYHATMOTION:
+								if(!get_int(configstrwhich, &input_which)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								if(!get_int(configstraxis, &input_axis)){
+									// TODO: check error
+									// printf("Error: unable to read config value for input. %s\n", configuration_get_error());
+									continue;
+								}
+								re.type = SDL_JOYHATMOTION;
+								// TODO: handle controller/joystick which dynamically
+								re.jhat.which = (SDL_JoystickID) input_which;
+								re.jhat.hat = (Uint8) input_axis;
+								re.jhat.value = (Uint8) input_value;
+								got_valid_config = 1;
+								break;
+
+							default:
+							// unhandled events
+								break;
+						}
+					}
+
+					if(got_valid_config){
+						input_context_add_raw_mapping_at(ic, &re, i, -1, 0);
+					}
+				}
+			}
+		}
+	}
+	return 1;
+}
+//---------------------------------------------------------------------------
 int input_init(){
 	input.num_joys = 0;
 	input.num_gcs = 0;

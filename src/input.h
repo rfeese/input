@@ -228,6 +228,9 @@ int input_context_load_configuration(t_input_context *ic, int translate_gc_which
 int input_context_save_configuration(t_input_context *ic);
 int input_player_prefer_controller_load_configuration();
 int input_player_prefer_controller_save_configuration();
+typedef int (config_get_int_t)(const char *key, int *value);
+typedef int (config_get_str_t)(const char *key, char *value, int size);
+int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str);
 int input_init();
 const char *input_event_get_name(SDL_Event *event);
 void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout);

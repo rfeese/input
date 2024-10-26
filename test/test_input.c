@@ -1368,6 +1368,27 @@ void test_input_player_prefer_controller_save_configuration(){
 }
 */
 
+int _config_get_int_called = 0;
+int config_get_int(const char *key, int *value){
+	*value = 1;
+	_config_get_int_called = 1;
+	return 1;
+}
+
+int _config_get_str_called = 0;
+int config_get_str(const char *key, char *value, int size){
+	snprintf(value, size, "%s", "1");
+	_config_get_str_called = 1;
+	return 1;
+}
+
+void test_input_load_configuration(){
+	_config_get_int_called = 0;
+	input_load_configuration(config_get_int, config_get_str);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_get_int_called, "config_get_int should have been called.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_get_str_called, "config_get_str should have been called.");
+}
+
 int main(){
 	UNITY_BEGIN();
 	RUN_TEST(test_input_context_add_input_at);
@@ -1391,5 +1412,6 @@ int main(){
 //	RUN_TEST(test_input_context_save_configuration);
 //	RUN_TEST(test_input_player_prefer_controller_load_configuration);
 //	RUN_TEST(test_input_player_prefer_controller_save_configuration);
+	RUN_TEST(test_input_load_configuration);
 	return UNITY_END();
 }
