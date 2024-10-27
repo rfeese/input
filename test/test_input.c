@@ -1377,7 +1377,8 @@ int config_get_int(const char *key, int *value){
 
 int _config_get_str_called = 0;
 int config_get_str(const char *key, char *value, int size){
-	snprintf(value, size, "%s", "1");
+	char *valuestr = "Hello,World!";
+	snprintf(value, size, "%s", valuestr);
 	_config_get_str_called = 1;
 	return 1;
 }
@@ -1391,13 +1392,17 @@ void test_input_load_configuration(){
 }
 
 int _config_set_int_called = 0;
+int configintval = 0;
 int config_set_int(const char *key, int value){
+	configintval = value;
 	_config_set_int_called = 1;
 	return 1;
 }
 
 int _config_set_str_called = 0;
+char configstrval[32] = { '\0' };
 int config_set_str(const char *key, const char *value){
+	snprintf(configstrval, 32, "%s", value);
 	_config_set_str_called = 1;
 	return 1;
 }
@@ -1405,9 +1410,13 @@ int config_set_str(const char *key, const char *value){
 void test_input_save_configuration(){
 	_config_set_int_called = 0;
 	_config_set_str_called = 0;
+	configintval = 0;
+	configstrval[0] = '\0';
 	input_save_configuration(config_set_int, config_set_str);
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_set_int_called, "config_set_int should have been called.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_set_str_called, "config_set_str should have been called.");
+	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(1, configintval, "configintval should have been changed.");
+	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(0, strnlen(configstrval, 32), "configstrval should not be empty.");
 }
 
 int main(){
