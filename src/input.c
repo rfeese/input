@@ -1854,6 +1854,109 @@ int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str)
 	return 1;
 }
 //---------------------------------------------------------------------------
+int input_save_configuration(config_set_int_t set_int, config_set_str_t set_str){
+
+	if(!set_int || !set_str){
+		return 0;
+	}
+
+	for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
+		char configstr[33] = {};
+		snprintf(configstr, 33, "p_%d_prefer_controller", p);
+		if(strnlen(input.player_prefer_controller[p], 33) > 0){
+			set_str(configstr, input.player_prefer_controller[p]);
+		}
+		else {
+			set_str(configstr, "none");
+		}
+	}
+
+	for(int pc = 0; pc < INPUT_MAX_PLAYER_CONTEXTS; pc++){
+		for(int p = 0; p < INPUT_MAX_PLAYERS; p++){
+			t_input_context *ic = input.player_context[pc][p];
+			if(!ic){
+				continue;
+			}
+
+			for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
+				if(!ic->input[i].defined){
+					continue;
+				}
+				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
+					char configstr[32];
+					t_raw_mapping *im = &ic->mapping[i][a];
+					if(!im->active){
+						continue;
+					}
+					snprintf(configstr, 32, "%s_%d_type", ic->input[i].name, a);
+					set_int(configstr, (int)im->event.type);
+
+					// TODO: support other input event types
+					switch(im->event.type){
+						case SDL_KEYDOWN:
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, (int)im->event.key.keysym.sym);
+							// TODO: support loading mappings with keymods?
+							break;
+
+						case SDL_MOUSEBUTTONDOWN:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							set_int(configstr, im->event.button.which);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.button.button);
+							break;
+
+						case SDL_JOYBUTTONDOWN:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							set_int(configstr, im->event.jbutton.which);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.jbutton.button);
+							break;
+
+						case SDL_CONTROLLERBUTTONDOWN:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							// todo: don't include controller button which
+							set_int(configstr, im->event.cbutton.which);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.cbutton.button);
+							break;
+
+						case SDL_JOYAXISMOTION:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							set_int(configstr, im->event.jaxis.which);
+							snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
+							set_int(configstr, im->event.jaxis.axis);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.jaxis.value);
+							break;
+
+						case SDL_CONTROLLERAXISMOTION:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							set_int(configstr, im->event.caxis.which);
+							snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
+							set_int(configstr, im->event.caxis.axis);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.caxis.value);
+							break;
+
+						case SDL_JOYHATMOTION:
+							snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
+							set_int(configstr, im->event.jhat.which);
+							snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
+							set_int(configstr, im->event.jhat.hat);
+							snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
+							set_int(configstr, im->event.jhat.value);
+							break;
+
+					}
+				}
+			}
+		}
+	}
+
+	return 1;
+}
+//---------------------------------------------------------------------------
 int input_init(){
 	input.num_joys = 0;
 	input.num_gcs = 0;
