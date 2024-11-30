@@ -200,41 +200,239 @@ typedef struct s_input_data {
 
 extern t_input_data input;
 
+/**
+ * Add an input definition to the provided input context at the specified index.
+ *
+ * \param ic Pointer to the input context.
+ * \param name String representing the human-readable name of the input.
+ * \param type Input type.
+ * \param input_idx Index of the input within the context.
+ * \param input_id The global input identifier.
+ */
 void input_context_add_input_at(t_input_context *ic, const char name[], t_input_type type, Uint8 input_idx, Uint32 input_id);
+
+/**
+ * Add an input definition to the provided input context.
+ *
+ * \param ic Pointer to the input context.
+ * \param name String representing the human-readable name of the input.
+ * \param type Input type.
+ * \param input_id The global input identifier.
+ */
 int input_context_add_input(t_input_context *ic, const char name[], t_input_type type, int input_id);
+
+/**
+ * Set the repeat time for an input in the provided input context.
+ * Repeat time is the time between input autofire activation repeats.
+ *
+ * \param ic Pointer to the input context.
+ * \param input_id The global input identifier.
+ * \param repeat_time The time between autofire repeats while input is activated.
+ */
 void input_context_input_set_repeat_time(t_input_context *ic, int input_id, int repeat_time);
+
+/**
+ * Set the repeat delay for an input in the provided input context.
+ * Repeat delay is the initial time delay before autofire repeat starts.
+ *
+ * \param ic Pointer to the input context.
+ * \param input_id The global input identifier.
+ * \param repeat_delay The input activation time before autofire repeat starts.
+ */
 void input_context_input_set_repeat_delay(t_input_context *ic, int input_id, int repeat_delay);
+
+/**
+ * Add an event to map to an input in the provided context at the specified alt position.
+ *
+ * \param ic Pointer to the input context.
+ * \param e Pointer to the SDL Event that to map to the input.
+ * \param input_idx Index of the input within the context.
+ * \param alt Index in the array of alternate event mappings for the input.
+ * \param is_default Whether this is a default mapping as opposed to a user-specified mapping.
+ */
 void input_context_add_raw_mapping_at(t_input_context *ic, const SDL_Event *e, Uint32 input_idx, int alt, int is_default);
+
+/**
+ * Add an event to map to an input in the provided context.
+ *
+ * \param ic Pointer to the input context.
+ * \param input_id The global input identifier.
+ * \param e Pointer to the SDL Event that to map to the input.
+ * \param is_default Whether this is a default mapping as opposed to a user-specified mapping.
+ *
+ * \return 1 if the mapping was added successfully.
+ */
 int input_context_add_raw_mapping(t_input_context *ic, Uint32 input_id, const SDL_Event *e, int is_default);
+
+/**
+ * Assign the default input event mappings to the provided context.
+ *
+ * \param ic Pointer to the input context.
+ */
 void input_context_apply_default_mappings(t_input_context *ic);
+
+/**
+ * Add a mapping of an input from one context to an input in another context.
+ *
+ * \param ic Pointer to the input context.
+ * \param input_id The global input identifier for the destination.
+ * \param src_input_id The global input identifier for the source.
+ *
+ * \return 1 if re-mapping was successfully added.
+ */
 int input_context_add_remap(t_input_context *ic, Uint32 input_id, Uint32 src_input_id);
+
+/**
+ * Add a controller input mapping to an input in the provided context.
+ *
+ * \param ic Pointer to the input context.
+ * \param input_id The global input identifier.
+ * \param controller_mapping Pointer to the controller mapping.
+ *
+ * \return 1 if the mapping was added successfully.
+ */
 int input_context_add_controller_mapping(t_input_context *ic, Uint32 input_id, const t_controller_mapping *controller_mapping);
+
+/**
+ * Process an input_event against a context's remappings.
+ *
+ * \param ic Pointer to the input context.
+ * \param ie Pointer to the Input Event to check for re-mappings.
+ * \param have_id Pointer to the have_ie flag for event processing.
+ */
 void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have_ie);
+
+/**
+ * Reset the input statuses in the provided context.
+ *
+ * \param ic Pointer to the input context.
+ */
 void input_context_reset(t_input_context *ic);
+
+/**
+ * Process an input_event against a context's remappings.
+ *
+ * \param ic Pointer to the input context.
+ * \param ie Pointer to the Input Event to apply.
+ */
 void input_context_apply_input_event(t_input_context *ic, t_input_event *ie);
 
+/**
+ * Un-associate a controller with the specified player's context, and remove associated controller mappings.
+ *
+ * \param player Player index.
+ * \param controller_idx Controller index.
+ */
 void unassign_controller_to_player(int player, int controller_idx);
+
+/**
+ * Associate a controller with a player, and assign default controller mappings.
+ *
+ * \param player Player index.
+ * \param controller_idx Controller index.
+ */
 void assign_controller_to_player(int player, int controller_idx);
 
-// input handler prototype
+/**
+ * Input handler callback prototype. Callee should consume raw events or input events.
+ *
+ * \param re Pointer to raw SDL Event.
+ * \param ie Pointer to Input Event.
+ * \param have_re Is there a valid unconsumed raw event?
+ * \param have_ie Is tehre a valid unconsumed input event?
+ */
 typedef void (*input_handler)(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie);
-// check incoming events using the provided contexts and handlers
-// if any input event triggered for provided contexts, it will be in ie.
-// otherwise, any unhandled raw event will be in re.
+
+/**
+ * Process input events and update input sytem.
+ *
+ * \param re Pointer to raw SDL Event.
+ * \param ie Pointer to Input Event.
+ * \param have_re Is there a valid unconsumed raw event?
+ * \param have_ie Is tehre a valid unconsumed input event?
+ * \param ic Array of pointers to input contexts to be checked.
+ * \param ih Array of input handler callbacks to call.
+ *
+ * \return 1 if there are more events to poll.
+ */
 int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_input_context *ic[], input_handler ih[]);
 
+/**
+ * Load additional game controller database.
+ */
 int input_load_gamecontrollerdb();
+
+/**
+ * Load configuration for provided Input Context.
+ */
 int input_context_load_configuration(t_input_context *ic, int translate_gc_which);
+
+/**
+ * Load configuration for provided Input Context.
+ */
 int input_context_save_configuration(t_input_context *ic);
+
+/**
+ * Load configuration for player controller preference.
+ */
 int input_player_prefer_controller_load_configuration();
+
+/**
+ * Load configuration for player controller preference.
+ */
 int input_player_prefer_controller_save_configuration();
+
+/**
+ * Function prototypes for config value getters.
+ */
 typedef int (config_get_int_t)(const char *key, int *value);
 typedef int (config_get_str_t)(const char *key, char *value, int size);
+
+/**
+ * Load input system configuration using getters.
+ *
+ * \param get_int Config getter.
+ * \param get_str Config getter.
+ */
 int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str);
+
+/**
+ * Function prototypes for config value setters.
+ */
 typedef int (config_set_int_t)(const char *key, int value);
 typedef int (config_set_str_t)(const char *key, const char *value);
+
+/**
+ * Save input system configuration using setters.
+ *
+ * \param set_int Config setter.
+ * \param set_str Config setter.
+ */
 int input_save_configuration(config_set_int_t set_int, config_set_str_t set_str);
+
+/**
+ * Initialize the input system.
+ *
+ * \return 1 if initialized successfully.
+ */
 int input_init();
+
+/**
+ * Get human-readable name for raw input event.
+ *
+ * \param event Pointer to SDL Event.
+ * \return String containing human-readable name.
+ */
 const char *input_event_get_name(SDL_Event *event);
+
+/**
+ * Obtain a new input event to add as a mapping for the specified player input in the provided context.
+ *
+ * \param player
+ * \param ic_player Pointer to player Input Context.
+ * \param input_idx
+ * \param alt
+ * \param timeout Time to wait for an input in mlliseconds.
+ */
 void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout);
 #endif //INPUT_H
