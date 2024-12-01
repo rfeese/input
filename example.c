@@ -213,8 +213,7 @@ int main(int argc, char* argv[]){
 #ifdef USE_CONFIGURATION
 	// Load config
 	configuration_init("input_example", "config.ini");
-	input_player_prefer_controller_load_configuration();
-	input_context_load_configuration(&ic_player, 1);
+	input_load_configuration(configuration_get_int_value, configuration_get_str_value);
 #endif
 
 	SDL_Event re = {};
@@ -335,8 +334,7 @@ int main(int argc, char* argv[]){
 	}
 
 #ifdef USE_CONFIGURATION
-	input_player_prefer_controller_save_configuration();
-	input_context_save_configuration(&ic_player);
+	input_save_configuration(configuration_set_int_value, configuration_set_str_value);
 #endif
 	SDL_Quit();
 	return EXIT_SUCCESS;

@@ -943,11 +943,10 @@ void assign_controller_to_player(int player, int i){
 	}
 
 	input.player_use_controller[player] = i;
-	// apply default controller mappings
+	// apply controller mappings
 	for(int c = 0; c < INPUT_MAX_PLAYER_CONTEXTS; c++){
 		if(input.player_context[c][player]){
 			input_context_apply_controller_mappings_for_controller(input.player_context[c][player], input.gc[i].instance_id);
-			input_context_load_configuration(input.player_context[c][player], input.gc[i].instance_id);
 		}
 	}
 }
@@ -1341,338 +1340,7 @@ int input_load_gamecontrollerdb(){
 	*/
 	return 0;
 }
-//---------------------------------------------------------------------------
-/** 
- * Load input config and add any matches to the context
- * Translate any controller which
- */
-int input_context_load_configuration(t_input_context *ic, int translate_gc_which){
-#ifdef USE_CONFIGURATION
-	if(!configuration_load()){
-		return 0;
-	}
 
-	SDL_EventType input_type;
-	int input_which;
-	int input_axis;
-	int input_value;
-	char configstrtype[32];
-	char configstrwhich[32];
-	char configstraxis[32];
-	char configstrval[32];
-	SDL_Event re = { };
-
-	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
-		if(!ic->input[i].defined){
-			continue;
-		}
-
-		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
-			//generate config key strings from the defined input state
-			snprintf(configstrtype,  32, "%s_%d_type",  ic->input[i].name, a);
-			snprintf(configstrwhich, 32, "%s_%d_which", ic->input[i].name, a);
-			snprintf(configstraxis,  32, "%s_%d_axis",  ic->input[i].name, a);
-			snprintf(configstrval,   32, "%s_%d_value", ic->input[i].name, a);
-
-			int got_valid_config = 0;
-			int input_type_tmp = 0;
-			if(configuration_get_int_value(configstrtype, &input_type_tmp)){
-				input_type = (SDL_EventType) input_type_tmp;
-
-				if(!configuration_get_int_value(configstrval, &input_value)){
-					printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-					continue;
-				}
-
-				//TODO: suport other input event types
-				switch(input_type){
-					case SDL_KEYDOWN:
-						re.type = SDL_KEYDOWN;
-						re.key.keysym.sym = (SDL_Keycode) input_value;
-						// TODO: support loading mappings with keymods?
-						re.key.keysym.mod = KMOD_NONE;
-						got_valid_config = 1;
-						break;
-
-					case SDL_MOUSEBUTTONDOWN:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						re.type = SDL_MOUSEBUTTONDOWN;
-						re.button.which = (Uint32) input_which;
-						re.button.button = (Uint8) input_value;
-						got_valid_config = 1;
-						break;
-
-					case SDL_JOYBUTTONDOWN:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						re.type = SDL_JOYBUTTONDOWN;
-						re.jbutton.which = (SDL_JoystickID) input_which;
-						re.jbutton.button = (Uint8) input_value;
-						got_valid_config = 1;
-						break;
-
-					case SDL_CONTROLLERBUTTONDOWN:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						if(translate_gc_which >= 0){
-							input_which = translate_gc_which;
-						}
-						input_which = translate_gc_which;
-						re.type = SDL_CONTROLLERBUTTONDOWN;
-						re.cbutton.which = (SDL_JoystickID) input_which;
-						re.cbutton.button = (Uint8) input_value;
-						got_valid_config = 1;
-						break;
-
-					case SDL_JOYAXISMOTION:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						if(!configuration_get_int_value(configstraxis, &input_axis)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						re.type = SDL_JOYAXISMOTION;
-						re.jaxis.which = (SDL_JoystickID) input_which;
-						re.jaxis.axis = (Uint8) input_axis;
-						re.jaxis.value = (Sint16) input_value;
-						got_valid_config = 1;
-						break;
-
-					case SDL_CONTROLLERAXISMOTION:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						if(!configuration_get_int_value(configstraxis, &input_axis)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						if(translate_gc_which >= 0){ 
-							input_which = translate_gc_which;
-						}
-						re.type = SDL_CONTROLLERAXISMOTION;
-						re.caxis.which = (SDL_JoystickID) input_which;
-						re.caxis.axis = (Uint8) input_axis;
-						re.caxis.value = (Sint16) input_value;
-						got_valid_config = 1;
-						break;
-
-					case SDL_JOYHATMOTION:
-						if(!configuration_get_int_value(configstrwhich, &input_which)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						if(!configuration_get_int_value(configstraxis, &input_axis)){
-							printf("Error: unable to read config value for input. %s\n", configuration_get_error());
-							continue;
-						}
-						re.type = SDL_JOYHATMOTION;
-						re.jhat.which = (SDL_JoystickID) input_which;
-						re.jhat.hat = (Uint8) input_axis;
-						re.jhat.value = (Uint8) input_value;
-						got_valid_config = 1;
-						break;
-
-					// unhandled events
-					case SDL_FIRSTEVENT:
-					case SDL_QUIT:
-					case SDL_APP_TERMINATING:
-					case SDL_APP_LOWMEMORY:
-					case SDL_APP_WILLENTERBACKGROUND:
-					case SDL_APP_DIDENTERBACKGROUND:
-					case SDL_APP_WILLENTERFOREGROUND:
-					case SDL_APP_DIDENTERFOREGROUND:
-					case SDL_WINDOWEVENT:
-					case SDL_SYSWMEVENT:
-					case SDL_KEYUP:
-					case SDL_TEXTEDITING:
-					case SDL_TEXTINPUT:
-					case SDL_KEYMAPCHANGED:
-					case SDL_MOUSEMOTION:
-					case SDL_MOUSEBUTTONUP:
-					case SDL_MOUSEWHEEL:
-					case SDL_JOYBALLMOTION:
-					case SDL_JOYBUTTONUP:
-					case SDL_JOYDEVICEADDED:
-					case SDL_JOYDEVICEREMOVED:
-					case SDL_CONTROLLERBUTTONUP:
-					case SDL_CONTROLLERDEVICEADDED:
-					case SDL_CONTROLLERDEVICEREMOVED:
-					case SDL_CONTROLLERDEVICEREMAPPED:
-					case SDL_FINGERDOWN:
-					case SDL_FINGERUP:
-					case SDL_FINGERMOTION:
-					case SDL_DOLLARGESTURE:
-					case SDL_DOLLARRECORD:
-					case SDL_MULTIGESTURE:
-					case SDL_CLIPBOARDUPDATE:
-					case SDL_DROPFILE:
-					case SDL_DROPTEXT:
-					case SDL_DROPBEGIN:
-					case SDL_DROPCOMPLETE:
-					case SDL_AUDIODEVICEADDED:
-					case SDL_AUDIODEVICEREMOVED:
-					case SDL_RENDER_TARGETS_RESET:
-					case SDL_RENDER_DEVICE_RESET:
-					case SDL_USEREVENT:
-					case SDL_LASTEVENT:
-						break;
-				}
-			}
-
-			if(got_valid_config){
-				input_context_add_raw_mapping_at(ic, &re, i, -1, 0);
-			}
-		}
-	}
-	return 1;
-#else // USE_CONFIGURATION
-	return 0;
-#endif
-}
-//---------------------------------------------------------------------------
-int input_context_save_configuration(t_input_context *ic){
-#ifdef USE_CONFIGURATION
-	char configstr[32];
-
-	for(int i = 0; i < INPUT_MAX_CONTEXT_INPUTS; i++){
-		if(!ic->input[i].defined){
-			continue;
-		}
-		for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
-			t_raw_mapping *im = &ic->mapping[i][a];
-			if(!im->active){
-				continue;
-			}
-			snprintf(configstr, 32, "%s_%d_type", ic->input[i].name, a);
-			configuration_set_int_value(configstr, (int)im->event.type);
-
-			//todo: support other input event types
-			switch(im->event.type){
-				case SDL_KEYDOWN:
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, (int)im->event.key.keysym.sym);
-					// TODO: support loading mappings with keymods?
-					break;
-
-				case SDL_MOUSEBUTTONDOWN:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.button.which);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.button.button);
-					break;
-
-				case SDL_JOYBUTTONDOWN:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jbutton.which);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jbutton.button);
-					break;
-
-				case SDL_CONTROLLERBUTTONDOWN:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					// todo: don't include controller button which
-					configuration_set_int_value(configstr, im->event.cbutton.which);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.cbutton.button);
-					break;
-
-				case SDL_JOYAXISMOTION:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jaxis.which);
-					snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jaxis.axis);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jaxis.value);
-					break;
-
-				case SDL_CONTROLLERAXISMOTION:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.caxis.which);
-					snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.caxis.axis);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.caxis.value);
-					break;
-
-				case SDL_JOYHATMOTION:
-					snprintf(configstr, 32, "%s_%d_which", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jhat.which);
-					snprintf(configstr, 32, "%s_%d_axis", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jhat.hat);
-					snprintf(configstr, 32, "%s_%d_value", ic->input[i].name, a);
-					configuration_set_int_value(configstr, im->event.jhat.value);
-					break;
-
-			}
-		}
-	}
-
-	return configuration_save();
-	return 1;
-#else // USE_CONFIGURATION
-	return 0;
-#endif
-}
-//---------------------------------------------------------------------------
-int input_player_prefer_controller_load_configuration(){
-#ifdef USE_CONFIGURATION
-	if(!configuration_load()){
-		return 0;
-	}
-
-	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
-		char configstr[33] = {};
-		snprintf(configstr, 33, "p_%d_prefer_controller", i);
-		const char *str_val = NULL;
-		if(configuration_get_str_value(configstr, &str_val)){
-			if(strncmp(str_val, "none", 33) != 0){
-				snprintf(input.player_prefer_controller[i], 33, "%s", str_val);
-			}
-			else {
-				snprintf(input.player_prefer_controller[i], 33, "%s", "");
-			}	
-		}
-	}
-	return 1;
-#else // USE_CONFIGURATION
-	return 0;
-#endif
-}
-//---------------------------------------------------------------------------
-int input_player_prefer_controller_save_configuration(){
-#ifdef USE_CONFIGURATION
-	char configstr[32] = {};
-
-	for(int i = 0; i < INPUT_MAX_PLAYERS; i++){
-		snprintf(configstr, 32, "p_%d_prefer_controller", i);
-		if(strnlen(input.player_prefer_controller[i], 33) > 0){
-			if(!configuration_set_str_value(configstr, input.player_prefer_controller[i])){
-				printf("Error: %s\n", configuration_get_error());
-			}
-		}
-		else {
-			if(!configuration_set_str_value(configstr, "none")){
-				printf("Error: %s\n", configuration_get_error());
-			}
-		}
-	}
-	return configuration_save();
-	return 1;
-#else // USE_CONFIGURATION
-	return 0;
-#endif
-
-}
 //---------------------------------------------------------------------------
 int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str){
 
@@ -1716,6 +1384,7 @@ int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str)
 					continue;
 				}
 
+				// raw mappings
 				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
 					//generate config key strings from the defined input state
 					snprintf(configstrtype,  32, "%s_%d_type",  ic->input[i].name, a);
@@ -1848,6 +1517,42 @@ int input_load_configuration(config_get_int_t get_int, config_get_str_t get_str)
 						input_context_add_raw_mapping_at(ic, &re, i, -1, 0);
 					}
 				}
+
+				// controller mappings
+				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
+					t_controller_mapping *cm = &ic->controller_mapping[i][a];
+
+					char configstr[32];
+					snprintf(configstr, 32, "p%d_cm_%d_%d_type", pc, i, a);
+					int cm_type_tmp;
+					if(get_int(configstr, &cm_type_tmp)){
+						controller_mapping_type cm_type = (controller_mapping_type)cm_type_tmp;
+						cm->type = cm_type;
+
+						switch(cm_type){
+							case INPUT_CONTROLLER_MAPPINGTYPE_BUTTON:
+								snprintf(configstr, 32, "p%d_cm_%d_%d_button", pc, i, a);
+								// TODO: check for errors
+								get_int(configstr, &cm->data.button);
+
+								break;
+
+							case INPUT_CONTROLLER_MAPPINGTYPE_AXIS:
+								snprintf(configstr, 32, "p%d_cm_%d_%d_axis", pc, i, a);
+								// TODO: check for errors
+								get_int(configstr, &cm->data.axis.axis);
+								snprintf(configstr, 32, "p%d_cm_%d_%d_axis_mod", pc, i, a);
+								// TODO: check for errors
+								int axis_mod;
+								get_int(configstr, &axis_mod);
+								cm->data.axis.axis_modifier = axis_mod;
+								break;
+
+							case INPUT_CONTROLLER_MAPPINGTYPE_NONE:
+								break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -1882,6 +1587,7 @@ int input_save_configuration(config_set_int_t set_int, config_set_str_t set_str)
 				if(!ic->input[i].defined){
 					continue;
 				}
+				// raw mappings
 				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
 					char configstr[32];
 					t_raw_mapping *im = &ic->mapping[i][a];
@@ -1948,6 +1654,31 @@ int input_save_configuration(config_set_int_t set_int, config_set_str_t set_str)
 							set_int(configstr, im->event.jhat.value);
 							break;
 
+					}
+				}
+
+				// controller mappings
+				for(int a = 0; a < INPUT_MAX_ALT_MAPPINGS; a++){
+					char configstr[32];
+					t_controller_mapping *cm = &ic->controller_mapping[i][a];
+					snprintf(configstr, 32, "p%d_cm_%d_%d_type", pc, i, a);
+					set_int(configstr, cm->type);
+
+					switch(cm->type){
+						case INPUT_CONTROLLER_MAPPINGTYPE_BUTTON:
+							snprintf(configstr, 32, "p%d_cm_%d_%d_button", pc, i, a);
+							set_int(configstr, cm->data.button);
+							break;
+
+						case INPUT_CONTROLLER_MAPPINGTYPE_AXIS:
+							snprintf(configstr, 32, "p%d_cm_%d_%d_axis", pc, i, a);
+							set_int(configstr, cm->data.axis.axis);
+							snprintf(configstr, 32, "p%d_cm_%d_%d_axis_mod", pc, i, a);
+							set_int(configstr, cm->data.axis.axis_modifier);
+							break;
+
+						case INPUT_CONTROLLER_MAPPINGTYPE_NONE:
+							break;
 					}
 				}
 			}

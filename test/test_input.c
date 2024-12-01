@@ -1221,70 +1221,6 @@ void test_input_player_input_get_new_mapping_event(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, context_player[0].mapping[p0_up][0].active, "p0_up mapping should have been unset.");
 }
 
-/*
-void test_input_context_load_configuration(){
-	t_input_context pc = {};
-	pc.input[P_UP].defined = 1;
-	strncpy(pc.input[P_UP].name, "p0_up", INPUT_NAME_LENGTH);
-	pc.input[P_DOWN].defined = 1;
-	strncpy(pc.input[P_DOWN].name, "p0_down", INPUT_NAME_LENGTH);
-	pc.input[P_LEFT].defined = 1;
-	strncpy(pc.input[P_LEFT].name, "p0_left", INPUT_NAME_LENGTH);
-	pc.input[P_RIGHT].defined = 1;
-	strncpy(pc.input[P_RIGHT].name, "p0_right", INPUT_NAME_LENGTH);
-	pc.input[P_FIRE].defined = 1;
-	strncpy(pc.input[P_FIRE].name, "p0_fire", INPUT_NAME_LENGTH);
-	pc.input[P_OPTION].defined = 1;
-	strncpy(pc.input[P_OPTION].name, "p0_option", INPUT_NAME_LENGTH);
-	pc.input[P_LIGHTNING].defined = 1;
-	strncpy(pc.input[P_LIGHTNING].name, "p0_lightning", INPUT_NAME_LENGTH);
-
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_load_configuration(&pc, -1), "Should have loaded successfully.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_KEYDOWN, pc.mapping[P_UP][0].event.type, "Should have loaded keydown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYHATMOTION, pc.mapping[P_DOWN][0].event.type, "Should have loaded joyhatmotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYAXISMOTION, pc.mapping[P_LEFT][0].event.type, "Should have loaded joyaxismotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERAXISMOTION, pc.mapping[P_RIGHT][0].event.type, "Should have loaded controlleraxismotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYBUTTONDOWN, pc.mapping[P_FIRE][0].event.type, "Should have loaded joybuttondown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, pc.mapping[P_OPTION][0].event.type, "Should have loaded controllerbutondown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_MOUSEBUTTONDOWN, pc.mapping[P_LIGHTNING][0].event.type, "Should have loaded mousebutondown type.");
-}
-*/
-
-/*
-void test_input_context_save_configuration(){
-	t_input_context pc = {};
-	pc.input[P_UP].defined = 1;
-	strncpy(pc.input[P_UP].name, "p0_up", INPUT_NAME_LENGTH);
-	pc.input[P_DOWN].defined = 1;
-	strncpy(pc.input[P_DOWN].name, "p0_down", INPUT_NAME_LENGTH);
-	pc.input[P_LEFT].defined = 1;
-	strncpy(pc.input[P_LEFT].name, "p0_left", INPUT_NAME_LENGTH);
-	pc.input[P_RIGHT].defined = 1;
-	strncpy(pc.input[P_RIGHT].name, "p0_right", INPUT_NAME_LENGTH);
-	pc.input[P_FIRE].defined = 1;
-	strncpy(pc.input[P_FIRE].name, "p0_fire", INPUT_NAME_LENGTH);
-	pc.input[P_OPTION].defined = 1;
-	strncpy(pc.input[P_OPTION].name, "p0_option", INPUT_NAME_LENGTH);
-	pc.input[P_LIGHTNING].defined = 1;
-	strncpy(pc.input[P_LIGHTNING].name, "p0_lightning", INPUT_NAME_LENGTH);
-
-
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_load_configuration(&pc, -1), "Should have loaded successfully.");
-
-	snprintf(configuration.filename, 32, "test_input_saved.ini");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_save_configuration(&pc), "Should have saved successfully.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_context_load_configuration(&pc, -1), "Should have reloaded successfully.");
-
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_KEYDOWN, pc.mapping[P_UP][0].event.type, "Should have loaded keydown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYHATMOTION, pc.mapping[P_DOWN][0].event.type, "Should have loaded joyhatmotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYAXISMOTION, pc.mapping[P_LEFT][0].event.type, "Should have loaded joyaxismotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERAXISMOTION, pc.mapping[P_RIGHT][0].event.type, "Should have loaded controlleraxismotion type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_JOYBUTTONDOWN, pc.mapping[P_FIRE][0].event.type, "Should have loaded joybuttondown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_CONTROLLERBUTTONDOWN, pc.mapping[P_OPTION][0].event.type, "Should have loaded controllerbutondown type.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(SDL_MOUSEBUTTONDOWN, pc.mapping[P_LIGHTNING][0].event.type, "Should have loaded mousebutondown type.");
-}
-*/
-
 /**
  * Test controller add and remove in more detail
  */
@@ -1352,22 +1288,6 @@ void test_controller_add_remove(){
 }
 */
 
-/*
-void test_input_player_prefer_controller_load_configuration(){
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_player_prefer_controller_load_configuration(), "Should be able to load player prefer controller.");
-}
-*/
-
-/*
-void test_input_player_prefer_controller_save_configuration(){
-	snprintf(input.player_prefer_controller[0], 33, "%s", "joystick_guid0");
-	snprintf(input.player_prefer_controller[1], 33, "%s", "joystick_guid1");
-	snprintf(configuration.filename, 32, "test_input_saved.ini");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_player_prefer_controller_save_configuration(), "Should be able to save player prefer controller.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_player_prefer_controller_load_configuration(), "Should have reloaded successfully.");
-}
-*/
-
 int _config_get_int_called = 0;
 int config_get_int(const char *key, int *value){
 	*value = 1;
@@ -1410,12 +1330,12 @@ int config_set_str(const char *key, const char *value){
 void test_input_save_configuration(){
 	_config_set_int_called = 0;
 	_config_set_str_called = 0;
-	configintval = 0;
+	configintval = 123456;
 	configstrval[0] = '\0';
 	input_save_configuration(config_set_int, config_set_str);
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_set_int_called, "config_set_int should have been called.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, _config_set_str_called, "config_set_str should have been called.");
-	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(1, configintval, "configintval should have been changed.");
+	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(123456, configintval, "configintval should have been changed.");
 	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(0, strnlen(configstrval, 32), "configstrval should not be empty.");
 }
 

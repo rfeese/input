@@ -363,26 +363,6 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 int input_load_gamecontrollerdb();
 
 /**
- * Load configuration for provided Input Context.
- */
-int input_context_load_configuration(t_input_context *ic, int translate_gc_which);
-
-/**
- * Load configuration for provided Input Context.
- */
-int input_context_save_configuration(t_input_context *ic);
-
-/**
- * Load configuration for player controller preference.
- */
-int input_player_prefer_controller_load_configuration();
-
-/**
- * Load configuration for player controller preference.
- */
-int input_player_prefer_controller_save_configuration();
-
-/**
  * Function prototypes for config value getters.
  */
 typedef int (config_get_int_t)(const char *key, int *value);
