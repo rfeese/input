@@ -195,6 +195,7 @@ typedef struct s_input_data {
 	void (*callback_resized)(int width, int height);
 	void (*callback_toggle_fullscreen)();
 	int exit_signal; // universal context exit signal
+	void (*callback_controller_added)(int player); // callback for when a controller is removed before the device is closed
 	void (*callback_controller_removed)(int player); // callback for when a controller is removed before the device is closed
 } t_input_data;
 

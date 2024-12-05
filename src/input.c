@@ -33,6 +33,7 @@ t_input_data input = {
 	.callback_resized = NULL,
 	.callback_toggle_fullscreen = NULL,
 	.exit_signal = 0,
+	.callback_controller_added = NULL,
 	.callback_controller_removed = NULL,
 };
 
@@ -1184,6 +1185,10 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 				ie->data.controller_connect.player = player;
 				ie->data.controller_connect.device_index = re->cdevice.which;
 				printf("Input device index %d added.\n", re->cdevice.which);
+
+				if(input.callback_controller_added){
+					input.callback_controller_added(player);
+				}
 			}
 		}
 		if(re->type == SDL_CONTROLLERDEVICEREMOVED){
