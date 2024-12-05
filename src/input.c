@@ -1187,7 +1187,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 				printf("Input device index %d added.\n", re->cdevice.which);
 
 				if(input.callback_controller_added){
-					input.callback_controller_added(player);
+					input.callback_controller_added(re->cdevice.which, player);
 				}
 			}
 		}

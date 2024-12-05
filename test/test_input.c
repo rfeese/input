@@ -265,7 +265,7 @@ void testevents_init(){
 }
 
 int _controller_added_callback_called = 0;
-void _controller_added_callback(int player){
+void _controller_added_callback(int device_index, int player){
 	_controller_added_callback_called = 1;
 }
 
