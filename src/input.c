@@ -68,9 +68,11 @@ void input_context_add_input_at(t_input_context *ic, const char name[], t_input_
 			break;
 		case IT_ANALOG_SCALAR:
 			// TODO: set defaults
+			// repeat is not applicable
 			break;
 		case IT_ANALOG_DIRECTION:
 			// TODO: set defaults
+			// repeat is not applicable
 			break;
 	}
 }
@@ -417,20 +419,44 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 			break;
 
 		case SDL_JOYAXISMOTION:
-			// compare to mapping to determine if the state is activated:
-			// if same sign (relative to center) and past threshold
-			if((((re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) < 0) == (mapping->event.jaxis.value < 0)) \
-					&& (ABS(re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) > input.joy[input.jid2idx[re->jaxis.which]].axis_deadzone[re->jaxis.axis])){
-				re_state = 1;
+			switch(i->type){
+				case IT_TRIGGER:
+				case IT_BUTTON:
+					// compare to mapping to determine if the state is activated:
+					// if same sign (relative to center) and past threshold
+					if((((re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) < 0) == (mapping->event.jaxis.value < 0)) \
+							&& (ABS(re->jaxis.value - input.joy[input.jid2idx[re->jaxis.which]].axis_center[re->jaxis.axis]) > input.joy[input.jid2idx[re->jaxis.which]].axis_deadzone[re->jaxis.axis])){
+						re_state = 1;
+					}
+					break;
+				case IT_ANALOG_SCALAR:
+				case IT_ANALOG_DIRECTION:
+					// input type is analog, so track any movement
+					re_state = 1;
+					break;
+				default:
+					break;
 			}
 			break;
 		
 		case SDL_CONTROLLERAXISMOTION:
-			// compare to mapping to determine if the state is activated:
-			// if same sign (relative to center) and past threshold
-			if(((re->caxis.value < 0) == (mapping->event.caxis.value < 0)) \
-					&& (ABS(re->caxis.value) > input.gc[input.gcid2idx[re->caxis.which]].axis_deadzone[re->caxis.axis])){
-				re_state = 1;
+			switch(i->type){
+				case IT_TRIGGER:
+				case IT_BUTTON:
+					// compare to mapping to determine if the state is activated:
+					// if same sign (relative to center) and past threshold
+					if(((re->caxis.value < 0) == (mapping->event.caxis.value < 0)) \
+							&& (ABS(re->caxis.value) > input.gc[input.gcid2idx[re->caxis.which]].axis_deadzone[re->caxis.axis])){
+						re_state = 1;
+					}
+					break;
+				case IT_ANALOG_SCALAR:
+				case IT_ANALOG_DIRECTION:
+					// input type is analog, so track any movement
+					re_state = 1;
+					break;
+				default:
+					break;
 			}
 			break;
 
@@ -501,9 +527,36 @@ int input_update_state(t_input *i, SDL_Event *re, t_input_event *ie, t_raw_mappi
 				return 1;
 			}
 			break;
-		// don't generate events?
 		case IT_ANALOG_SCALAR:
+			ie->input_id = i->id;
+			ie->type = IE_ANALOG_SCALAR;
+			switch(re->type){
+				case SDL_KEYDOWN:
+					i->data.analog_scalar.value = 32767;
+					ie->data.analog_scalar.value = 32767;
+					break;
+				case SDL_KEYUP:
+					i->data.analog_scalar.value = -32767;
+					ie->data.analog_scalar.value = -32767;
+					break;
+				case SDL_JOYAXISMOTION:
+					i->data.analog_scalar.value = re->jaxis.value;
+					ie->data.analog_scalar.value = re->jaxis.value;
+					break;
+				case SDL_CONTROLLERAXISMOTION:
+					i->data.analog_scalar.value = re->caxis.value;
+					ie->data.analog_scalar.value = re->caxis.value;
+					break;
+				default:
+					// TODO: other conversions?
+					i->data.analog_scalar.value = 0;
+					ie->data.analog_scalar.value = 0;
+					break;
+			}		
+			return 1;
+			break;
 		case IT_ANALOG_DIRECTION:
+			// TODO
 			break;
 	}
 	return 0;
@@ -557,6 +610,9 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								}
 								return;
 								break;
+							// TODO
+							case IE_ANALOG_SCALAR:
+							case IE_ANALOG_DIRECTION:
 							// can't be remapped
 							case IE_CONTROLLER_CONNECT:
 							case IE_CONTROLLER_DISCONNECT:
@@ -628,6 +684,9 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								}
 								return;
 								break;
+							// TODO
+							case IE_ANALOG_SCALAR:
+							case IE_ANALOG_DIRECTION:
 							// can't be remapped
 							case IE_CONTROLLER_CONNECT:
 							case IE_CONTROLLER_DISCONNECT:
@@ -709,6 +768,9 @@ void input_context_remap_event(t_input_context *ic, t_input_event *ie, int *have
 								ie->input_id = ri->id;
 								return;
 								break;
+							// TODO
+							case IE_ANALOG_SCALAR:
+							case IE_ANALOG_DIRECTION:
 							// can't be remapped
 							case IE_CONTROLLER_CONNECT:
 							case IE_CONTROLLER_DISCONNECT:
@@ -741,9 +803,10 @@ void input_context_reset(t_input_context *ic){
 				case IT_POINTING_DEVICE:
 					ic->input[i].data.pointing_device.state = 0;
 					break;
-				// TODO: init structures
 				case IT_ANALOG_SCALAR:
+					ic->input[i].data.analog_scalar.value = 0;
 				case IT_ANALOG_DIRECTION:
+					// TODO
 					break;
 			}
 		}
@@ -777,6 +840,13 @@ void input_context_apply_input_event(t_input_context *ic, t_input_event *ie){
 						ic->input[i].data.pointing_device.y = ie->data.pointing_device_move.y;
 					}
 					break;
+				case IE_ANALOG_SCALAR:
+					if(ic->input[i].type == IT_ANALOG_SCALAR){
+						ic->input[i].data.analog_scalar.value = ie->data.analog_scalar.value;
+					}
+					break;
+				// TODO
+				case IE_ANALOG_DIRECTION:
 				// nothing to apply
 				case IE_CONTROLLER_CONNECT:
 				case IE_CONTROLLER_DISCONNECT:
@@ -1937,6 +2007,12 @@ void input_event_print(struct s_input_event *ie){
 			break;
 		case IE_POINTING_DEVICE_MOVE:
 			printf("ie: pd move %d\n", ie->input_id);
+			break;
+		case IE_ANALOG_SCALAR:
+			printf("ie: analog scalar %d\n", ie->data.analog_scalar.value);
+			break;
+		case IE_ANALOG_DIRECTION:
+			printf("ie: analog direction \n");
 			break;
 		case IE_CONTROLLER_CONNECT:
 			printf("ie: controller connected\n");

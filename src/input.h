@@ -62,6 +62,11 @@ typedef struct s_input_pointing_device {
         Sint32 y;
 } t_input_pointing_device;
 
+// analog scalar (1 axis) value [-32768,32767]
+typedef struct s_analog_scalar {
+	Sint16 value;
+} t_analog_scalar;
+
 // input union
 typedef struct s_input {
 	Uint8 defined;
@@ -72,6 +77,7 @@ typedef struct s_input {
 		t_input_trigger trigger;
 		t_input_button button;
 		t_input_pointing_device pointing_device;
+		t_analog_scalar analog_scalar;
 	} data;
 } t_input;
 
@@ -105,6 +111,8 @@ typedef enum input_event_type {
 	IE_BUTTON,
 	IE_POINTING_DEVICE_BUTTON,
 	IE_POINTING_DEVICE_MOVE,
+	IE_ANALOG_SCALAR,		// A scalar value changed
+	IE_ANALOG_DIRECTION,		// A direction changed
 	// Other abstract events that the game engine should potentially handle
 	IE_CONTROLLER_DISCONNECT,	// A controller mapped to a player was disconnected -- may deserve a pause
 	IE_CONTROLLER_CONNECT,		// A controller mapped to a player was connected -- ready for resume?
@@ -130,6 +138,10 @@ typedef struct s_ie_pointing_device_move {
 	Sint32 y;
 } t_ie_pointing_device_move;
 
+typedef struct s_ie_analog_scalar {
+	Sint16 value;
+} t_ie_analog_scalar;
+
 typedef struct s_ie_controller_connect {
 	int player;
 	Sint32 device_index;
@@ -143,6 +155,7 @@ typedef struct s_input_event {
 		t_ie_button button;
 		t_ie_pointing_device_button pointing_device_button;
 		t_ie_pointing_device_move pointing_device_move;
+		t_ie_analog_scalar analog_scalar;
 		t_ie_controller_connect controller_connect;
 	} data;
 } t_input_event;

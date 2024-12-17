@@ -400,10 +400,17 @@ void test_input_context_reset(){
 	ic.input[3].data.button.repeat_time = INPUT_DEFAULT_REPEAT_TIME;
 	ic.input[3].data.button.state = 1;
 
+	ic.input[4].defined = 1;
+	ic.input[4].id = 1;
+	ic.input[4].type = IT_ANALOG_SCALAR;
+	ic.input[4].data.analog_scalar.value = 5;
+
+
 	input_context_reset(&ic);
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic.input[1].data.button.state, "Input state should have been reset.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic.input[2].data.button.state, "Input state should have been reset.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic.input[3].data.button.state, "Input state for undefined input should not have been reset.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ic.input[4].data.analog_scalar.value, "Value for analog scalar should have been reset.");
 
 }
 
@@ -427,6 +434,11 @@ void test_input_context_apply_input_event(){
 	ic.input[2].data.button.repeat_time = INPUT_DEFAULT_REPEAT_TIME;
 	ic.input[2].data.button.state = 1;
 
+	ic.input[3].defined = 1;
+	ic.input[3].id = 3;
+	ic.input[3].type = IT_ANALOG_SCALAR;
+	ic.input[3].data.analog_scalar.value = 0;
+
 	t_input_event ie = {};
 
 	ie.input_id = 1;
@@ -443,6 +455,12 @@ void test_input_context_apply_input_event(){
 	ie.data.button.state = 1;
 	input_context_apply_input_event(&ic, &ie);
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ic.input[2].data.button.state, "Button state should still be set.");
+
+	ie.input_id = 3;
+	ie.type = IE_ANALOG_SCALAR;
+	ie.data.analog_scalar.value = 8;
+	input_context_apply_input_event(&ic, &ie);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(8, (int)ic.input[3].data.analog_scalar.value, "Analog scalar value should be set.");
 }
 
 void test_input_context_add_input_at(){
@@ -726,6 +744,16 @@ void test_input_poll(){
 	pc.mapping[1][0].event.key.keysym.sym = SDLK_m;
 	pc.mapping[1][0].event.key.keysym.mod = KMOD_NONE;
 
+	int p0_throttle = 10;
+	pc.input[2].defined = 1;
+	pc.input[2].id = p0_throttle;
+	strncpy(pc.input[2].name, "p0_throttle", INPUT_NAME_LENGTH);
+	pc.input[2].type = IT_ANALOG_SCALAR;
+	pc.mapping[2][0].active = 1;
+	pc.mapping[2][0].event.type = SDL_KEYDOWN;
+	pc.mapping[2][0].event.key.keysym.sym = SDLK_t;
+	pc.mapping[2][0].event.key.keysym.mod = KMOD_NONE;
+
 
 	// editor common context
 	ec_input1 = 3;
@@ -796,6 +824,11 @@ void test_input_poll(){
 	testevents[5].key.keysym.sym = SDLK_TAB;
 	testevents[5].key.keysym.mod = KMOD_NONE;
 
+	// p0_throttle
+	testevents[6].type = SDL_KEYDOWN;
+	testevents[6].key.keysym.sym = SDLK_t;
+	testevents[6].key.keysym.mod = KMOD_NONE;
+
 	testevents_index = 0;
 
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { &gc, &pc, &ec, &uic, &nc };
@@ -865,6 +898,17 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(nnext, ie.input_id, "Input event should be nodenext.");
+
+	// p0_throttle
+	g_input_handler_called = 0;
+	ec_input_handler_called = 0;
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(7, testevents_index, "Should have polled 7th testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_throttle, ie.input_id, "Input event should be p0_throttle.");
 
 	// test return value whether there are more inputs in queue to poll
 	testevents_index = TESTEVENTS_MAX;
@@ -959,9 +1003,16 @@ void test_input_poll(){
 	pc.mapping[1][0].event.caxis.axis = 1;
 	pc.mapping[1][0].event.caxis.value = 1;
 
+	//p0_throttle
+	pc.mapping[2][0].active = 1;
+	pc.mapping[2][0].event.type = SDL_CONTROLLERAXISMOTION;
+	pc.mapping[2][0].event.caxis.which = 0;
+	pc.mapping[2][0].event.caxis.axis = 2;
+
 	// set input states to axis centered
 	pc.input[0].data.button.state = 0;
 	pc.input[1].data.button.state = 0;
+	pc.input[2].data.analog_scalar.value = 0;
 
 	// wrong device which
 	testevents[0].type = SDL_CONTROLLERAXISMOTION;
@@ -1020,6 +1071,20 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_up, ie.input_id, "event should have been for p0_up.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ie.data.button.state, "event button state should be 1.");
+
+	// p0_throttle
+	testevents[0].type = SDL_CONTROLLERAXISMOTION;
+	testevents[0].caxis.which = 0;
+	testevents[0].caxis.axis = 2;
+	testevents[0].caxis.value = 10000;
+	testevents_index = 0;
+	pc.input[2].data.analog_scalar.value = 0;
+	
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have more to poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_throttle, ie.input_id, "event should have been for p0_throttle.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(10000, ie.data.analog_scalar.value, "analog scalar value should be 10000.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(10000, pc.input[2].data.analog_scalar.value, "input analog scalar value should be 10000.");
 
 	// mapping active status
 	//p0_up
