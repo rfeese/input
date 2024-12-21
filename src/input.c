@@ -1254,7 +1254,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 				ie->type = IE_CONTROLLER_CONNECT;
 				ie->data.controller_connect.player = player;
 				ie->data.controller_connect.device_index = re->cdevice.which;
-				printf("Input device index %d added.\n", re->cdevice.which);
+				// printf("Input device index %d added.\n", re->cdevice.which);
 
 				if(input.callback_controller_added){
 					input.callback_controller_added(re->cdevice.which, player);
@@ -1282,7 +1282,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 				*have_ie = 1;
 				ie->type = IE_CONTROLLER_DISCONNECT;
 				ie->data.controller_connect.player = player;
-				printf("Input instance id %d removed.\n", re->cdevice.which);
+				// printf("Input instance id %d removed.\n", re->cdevice.which);
 			}
 		}
 
