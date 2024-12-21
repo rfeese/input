@@ -709,7 +709,9 @@ void test_input_poll(){
 	SDL_Event re = {};
 	t_input_event ie = {};
 	int have_re, have_ie = 0;
-	
+
+	// contexts
+		
 	// global context
 	gc_input1 = 1;
 	t_input_context gc = {};
@@ -754,7 +756,6 @@ void test_input_poll(){
 	pc.mapping[2][0].event.key.keysym.sym = SDLK_t;
 	pc.mapping[2][0].event.key.keysym.mod = KMOD_NONE;
 
-
 	// editor common context
 	ec_input1 = 3;
 	t_input_context ec = {};
@@ -779,7 +780,7 @@ void test_input_poll(){
 	uic.mapping[0][0].event.key.keysym.sym = SDLK_UP;
 	uic.mapping[0][0].event.key.keysym.mod = KMOD_NONE;
 	uic.remap[0][0].active = 1;
-	uic.remap[0][0].src_input_id = p0_up;
+	uic.remap[0][0].src_input_id = p0_up; // player up gets translated to ui up
 
 	// path nodes context
 	int nnext = 5;
@@ -793,71 +794,54 @@ void test_input_poll(){
 	nc.mapping[0][0].event.key.keysym.sym = SDLK_TAB;
 	nc.mapping[0][0].event.key.keysym.mod = KMOD_NONE;
 
-	// test events
-	// unmapped
-	testevents[0].type = SDL_KEYDOWN;
-	testevents[0].key.keysym.sym = SDLK_y;
-	testevents[0].key.keysym.mod = KMOD_NONE;
-
-	// exit
-	testevents[1].type = SDL_KEYDOWN;
-	testevents[1].key.keysym.sym = SDLK_ESCAPE;
-	testevents[1].key.keysym.mod = KMOD_NONE;
-
-	// ce_bg MISSING KEYMOD
-	testevents[2].type = SDL_KEYDOWN;
-	testevents[2].key.keysym.sym = SDLK_b;
-	testevents[2].key.keysym.mod = KMOD_NONE;
-
-	// ce_bg
-	testevents[3].type = SDL_KEYDOWN;
-	testevents[3].key.keysym.sym = SDLK_b;
-	testevents[3].key.keysym.mod = KMOD_LCTRL;
-
-	// p_up 
-	testevents[4].type = SDL_KEYDOWN;
-	testevents[4].key.keysym.sym = SDLK_k;
-	testevents[4].key.keysym.mod = KMOD_NONE;
-
-	// node next
-	testevents[5].type = SDL_KEYDOWN;
-	testevents[5].key.keysym.sym = SDLK_TAB;
-	testevents[5].key.keysym.mod = KMOD_NONE;
-
-	// p0_throttle
-	testevents[6].type = SDL_KEYDOWN;
-	testevents[6].key.keysym.sym = SDLK_t;
-	testevents[6].key.keysym.mod = KMOD_NONE;
-
-	testevents_index = 0;
-
 	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { &gc, &pc, &ec, &uic, &nc };
 	input_handler handlers[INPUT_MAX_CONTEXTS] = { g_input_handler, ec_input_handler };
 
-	// unmapped raw event passes through
+
+	// test unmapped raw event passes through
+	// unmapped event
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_y;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_re, "Should have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(testevents[0].key.keysym.sym, re.key.keysym.sym, "re should contain testevent.");
 
-	// event handled by global context
+	
+	// test event handled by global context
+	// exit event
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_ESCAPE;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(2, testevents_index, "Should have polled 2nd testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1nd testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ec_input_handler_called, "Should not have called ec_input_handler.");
 
-	// event not handled by ce context -- KEYMOD doesn't match
+
+	// test event not handled by ce context -- KEYMOD doesn't match
+	// ce_bg MISSING KEYMOD
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_b;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(3, testevents_index, "Should have polled 3rd testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_re, "Should have raw event (should not have mapped).");
@@ -866,49 +850,78 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ec.input[0].data.button.state, "ec_input1 button should not be activated.");
 
-	// event handled by ce context
+
+	// test event handled by ce context
+	// ce_bg
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_b;
+	testevents[0].key.keysym.mod = KMOD_LCTRL;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(4, testevents_index, "Should have polled 4th testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec.input[0].data.button.state, "ec_input1 button should be activated.");
 
-	// player input translated to ui input
+
+	// test player input translated to ui input
+	// p_up 
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_k;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(5, testevents_index, "Should have polled 5th testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(ui_up, ie.input_id, "Input event should be ui_up.");
 
-	// node input
+
+	// another context
+	// node next
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_TAB;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(6, testevents_index, "Should have polled 6th testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(nnext, ie.input_id, "Input event should be nodenext.");
 
+
+	// analog input type
 	// p0_throttle
+	testevents[0].type = SDL_KEYDOWN;
+	testevents[0].key.keysym.sym = SDLK_t;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
 	g_input_handler_called = 0;
 	ec_input_handler_called = 0;
+
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
-	TEST_ASSERT_EQUAL_INT_MESSAGE(7, testevents_index, "Should have polled 7th testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(p0_throttle, ie.input_id, "Input event should be p0_throttle.");
+
 
 	// test return value whether there are more inputs in queue to poll
 	testevents_index = TESTEVENTS_MAX;
@@ -978,7 +991,31 @@ void test_input_poll(){
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
 	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_ie, "Should not have input event.");
 
-	// TODO: button released
+
+	// button released
+	// p_up event (will be translated to ui event)
+	testevents[0].type = SDL_KEYUP;
+	testevents[0].key.keysym.sym = SDLK_k;
+	testevents[0].key.keysym.mod = KMOD_NONE;
+	testevents_index = 0;
+	g_input_handler_called = 0;
+	ec_input_handler_called = 0;
+
+	// player and ui input buttons are currently pressed
+	pc.input[0].data.button.state = 1;
+	uic.input[0].data.button.state = 1;
+
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers), "Should have called input_poll.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, testevents_index, "Should have polled 1st testevent.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, g_input_handler_called, "Should have called g_input_handler.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, ec_input_handler_called, "Should have called ec_input_handler.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, have_re, "Should not have raw event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, have_ie, "Should have input event.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(ui_up, ie.input_id, "Input event should be ui_up.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, ie.data.button.state, "Input event button state should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, pc.input[0].data.button.state, "Input p_up button state should be 0.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(0, uic.input[0].data.button.state, "Input ui_up button state should be 0.");
+
 
 	// set up a controller
 	input.num_gcs = 1;	
