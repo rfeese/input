@@ -180,6 +180,8 @@ typedef struct s_input_gc {
 	int instance_id;
 } t_input_gc;
 
+typedef void (input_global_handler_callback_t)(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, void *context);
+
 // joystick_id/instance id: the identifier assigned to the joystick by SDL. Increments each time a joystick is plugged in.
 // joystick_index/device index: the OS joystick device number. Can change -- if devices are unplugged, others are re-indexed.
 // joystick_index can't really be used for identification later as it can change.
@@ -210,6 +212,8 @@ typedef struct s_input_data {
 	int exit_signal; // universal context exit signal
 	void (*callback_controller_added)(int device_index, int player); // callback for when a controller is removed before the device is closed
 	void (*callback_controller_removed)(int player); // callback for when a controller is removed before the device is closed
+	input_global_handler_callback_t *global_handler;
+	void *global_handler_context;
 } t_input_data;
 
 extern t_input_data input;
@@ -429,4 +433,6 @@ const char *input_event_get_name(SDL_Event *event);
  * \param timeout Time to wait for an input in mlliseconds.
  */
 void input_player_input_get_new_mapping_event(int player, t_input_context *ic_player, int input_idx, int alt, Uint32 timeout);
+
+void input_set_global_handler(input_global_handler_callback_t handler, void *handler_context);
 #endif //INPUT_H

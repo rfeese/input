@@ -1449,6 +1449,37 @@ void test_input_save_configuration(){
 	TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(0, strnlen(configstrval, 32), "configstrval should not be empty.");
 }
 
+struct myhandlercontext_t {
+	int value;
+};
+
+struct myhandlercontext_t myhandlercontext = { .value = 0 };
+
+int myhandler_called = 0;
+void myhandler(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, void *context){
+	myhandler_called = 1;
+	struct myhandlercontext_t *mycontext = context;
+	mycontext->value = 1;
+}
+
+void test_input_set_global_handler(){
+
+	SDL_Event re = {};
+	t_input_event ie = {};
+	int have_re, have_ie = 0;
+
+	// add handler
+	input_set_global_handler(myhandler, &myhandlercontext);
+
+	t_input_context *contexts[INPUT_MAX_CONTEXTS] = { };
+	input_handler handlers[INPUT_MAX_CONTEXTS] = { };
+
+	// trigger handler
+	input_poll(&re, &ie, &have_re, &have_ie, contexts, handlers);
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, myhandler_called, "myhandler should have been called.");
+	TEST_ASSERT_EQUAL_INT_MESSAGE(1, myhandlercontext.value, "Context value should have been updated to 1.");
+}
+
 int main(){
 	UNITY_BEGIN();
 	RUN_TEST(test_input_context_add_input_at);
@@ -1474,5 +1505,6 @@ int main(){
 //	RUN_TEST(test_input_player_prefer_controller_save_configuration);
 	RUN_TEST(test_input_load_configuration);
 	RUN_TEST(test_input_save_configuration);
+	RUN_TEST(test_input_set_global_handler);
 	return UNITY_END();
 }
