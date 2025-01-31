@@ -1319,10 +1319,6 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		// TODO: lost focus signal (window minimize, etc)
 	}
 
-	if(input.global_handler){
-		input.global_handler(re, ie, have_re, have_ie, input.global_handler_context);
-	}
-
 	if(*have_re){
 		// apply to contexts
 		for(int c = 0; (c < INPUT_MAX_CONTEXTS) && ic[c]; c++){
@@ -1388,7 +1384,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		}
 	}
 
-	// call built-in handlers
+	// call handlers
 
 	int h = 0;
 	while((*have_re || *have_ie) && (h < INPUT_MAX_CONTEXTS)){
@@ -1397,6 +1393,11 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		}
 		h++;
 	}
+
+	if(input.global_handler){
+		input.global_handler(re, ie, have_re, have_ie, input.global_handler_context);
+	}
+
 	return more_to_poll;
 }
 //---------------------------------------------------------------------------
