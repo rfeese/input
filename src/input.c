@@ -1286,6 +1286,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 			}
 		}
 
+
 		// context exit
 		if((re->type == SDL_KEYDOWN) && (re->key.keysym.sym == SDLK_ESCAPE)){
 			input.exit_signal = 1;
@@ -1317,6 +1318,11 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 			}
 		}
 		// TODO: lost focus signal (window minimize, etc)
+	}
+
+	// call global handler before mappings are applied
+	if(input.global_handler){
+		input.global_handler(re, ie, have_re, have_ie, input.global_handler_context);
 	}
 
 	if(*have_re){
@@ -1384,8 +1390,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		}
 	}
 
-	// call handlers
-
+	// call handlers after all mappings were applied
 	int h = 0;
 	while((*have_re || *have_ie) && (h < INPUT_MAX_CONTEXTS)){
 		if(ih[h]){
@@ -1394,6 +1399,7 @@ int input_poll(SDL_Event *re, t_input_event *ie, int *have_re, int *have_ie, t_i
 		h++;
 	}
 
+	// call global handler after mappings are applied
 	if(input.global_handler){
 		input.global_handler(re, ie, have_re, have_ie, input.global_handler_context);
 	}
